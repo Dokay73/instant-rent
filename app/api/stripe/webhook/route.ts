@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.CheckoutSession
+    const session = event.data.object as Stripe.Checkout.Session
     const { applicationId, propertyId, landlordId } = session.metadata!
 
     const supabase = await createClient()
