@@ -100,7 +100,7 @@ export default async function ApplicationsPage({
 
                   {/* Actions */}
                   {app.status === 'pending' && (
-                    <ApplicationActions applicationId={app.id} />
+                    <ApplicationActions applicationId={app.id} propertyId={id} />
                   )}
                 </div>
               )
