@@ -1,82 +1,258 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import PropertyCard from '@/components/PropertyCard'
+import Link from 'next/link'
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ city?: string }>
-}) {
-  const { city } = await searchParams
-  const supabase = await createClient()
+const STATS = [
+  { value: '100%', label: 'En ligne, sans déplacement' },
+  { value: '24h', label: 'Délai moyen de validation' },
+  { value: '0€', label: 'Si votre bien est vacant' },
+]
 
-  let query = supabase
-    .from('properties')
-    .select('*')
-    .eq('status', 'vacant')
-    .order('created_at', { ascending: false })
+const LANDLORD_BENEFITS = [
+  {
+    title: 'Bail Code Civil — flexibilité totale',
+    desc: 'Aucune contrainte de durée imposée par la loi. Vous définissez les règles : durée, caution, critères de revenus.',
+  },
+  {
+    title: 'Payez uniquement quand c\'est loué',
+    desc: 'Abonnement activé uniquement lorsque votre bien est occupé. Zéro frais si vacant.',
+  },
+  {
+    title: 'Dossiers vérifiés automatiquement',
+    desc: 'Pièce d\'identité, contrat de travail, justificatif de domicile — tout est vérifié avant que vous ne voyiez la candidature.',
+  },
+]
 
-  if (city) {
-    query = query.ilike('city', `%${city}%`)
+const TENANT_BENEFITS = [
+  {
+    title: 'Des logements flexibles',
+    desc: 'De 1 mois à 24 mois et plus. Trouvez un logement adapté à votre situation, quelle que soit votre durée de séjour.',
+  },
+  {
+    title: 'Dossier 100% en ligne',
+    desc: 'Déposez votre candidature en quelques minutes. Pas de déplacement, pas de paperasse.',
+  },
+  {
+    title: 'Réponse rapide',
+    desc: 'Les propriétaires s\'engagent à répondre sous 24h. Fini l\'attente interminable.',
+  },
+]
+
+const HOW_IT_WORKS_LANDLORD = [
+  { step: '1', title: 'Publiez votre bien', desc: 'Ajoutez votre logement en 5 minutes. Définissez vos critères et durées acceptées.' },
+  { step: '2', title: 'Recevez des candidatures', desc: 'Les dossiers arrivent directement avec tous les documents vérifiés.' },
+  { step: '3', title: 'Validez et signez', desc: 'Acceptez le locataire idéal. Le bail est généré automatiquement.' },
+]
+
+const HOW_IT_WORKS_TENANT = [
+  { step: '1', title: 'Trouvez votre logement', desc: 'Recherchez par ville et durée. Consultez les fiches détaillées.' },
+  { step: '2', title: 'Déposez votre dossier', desc: 'Uploadez vos documents en quelques clics. 100% en ligne.' },
+  { step: '3', title: 'Recevez une réponse', desc: 'Le propriétaire vous répond sous 24h. Emménagez sereinement.' },
+]
+
+export default function HomePage() {
+  const [activeTab, setActiveTab] = useState<'landlord' | 'tenant'>('landlord')
+  const [city, setCity] = useState('')
+  const router = useRouter()
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    router.push(`/biens${city ? `?city=${city}` : ''}`)
   }
 
-  const { data: properties } = await query
+  const benefits = activeTab === 'landlord' ? LANDLORD_BENEFITS : TENANT_BENEFITS
+  const howItWorks = activeTab === 'landlord' ? HOW_IT_WORKS_LANDLORD : HOW_IT_WORKS_TENANT
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Hero */}
-      <section className="bg-white border-b border-slate-200 py-12">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h1 className="text-3xl font-semibold text-slate-900">
-            Trouvez votre prochain logement
+      {/* HERO */}
+      <section className="bg-slate-900 text-white py-20 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+            La location sans contrainte,<br />
+            <span className="text-slate-400">sous Bail Code Civil</span>
           </h1>
-          <p className="text-slate-500 mt-2">
-            Baux Code Civil — flexibilité totale, sans contrainte de durée imposée
+          <p className="mt-4 text-slate-400 text-lg max-w-2xl mx-auto">
+            Instant Rent connecte propriétaires et locataires avec une flexibilité totale.
+            Aucune durée imposée. Aucun frais si vacant.
           </p>
 
-          <form method="GET" className="mt-6 flex gap-2 max-w-md mx-auto">
+          {/* Barre de recherche */}
+          <form onSubmit={handleSearch} className="mt-8 flex gap-2 max-w-lg mx-auto">
             <input
-              name="city"
-              defaultValue={city}
+              value={city}
+              onChange={e => setCity(e.target.value)}
               type="text"
               placeholder="Rechercher par ville..."
-              className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="flex-1 px-4 py-3 rounded-xl text-slate-900 text-sm focus:outline-none"
             />
             <button
               type="submit"
-              className="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+              className="bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-colors"
             >
               Rechercher
             </button>
           </form>
+
+          <div className="mt-4">
+            <Link href="/biens" className="text-slate-400 text-sm hover:text-white underline">
+              Voir tous les biens disponibles →
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Grille de biens */}
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        {properties && properties.length > 0 ? (
-          <>
-            <p className="text-sm text-slate-500 mb-6">
-              {properties.length} bien{properties.length > 1 ? 's' : ''} disponible{properties.length > 1 ? 's' : ''}
-              {city ? ` à ${city}` : ''}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map(property => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
+      {/* STATS */}
+      <section className="bg-white border-b border-slate-100 py-12 px-4">
+        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
+          {STATS.map(stat => (
+            <div key={stat.value}>
+              <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+              <p className="text-sm text-slate-500 mt-1">{stat.label}</p>
             </div>
-          </>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-slate-400 text-lg">Aucun bien disponible pour le moment</p>
-            <p className="text-slate-400 text-sm mt-1">
-              {city ? `Aucun résultat pour "${city}"` : 'Revenez bientôt'}
+          ))}
+        </div>
+      </section>
+
+      {/* AVANTAGES — Toggle */}
+      <section className="py-16 px-4 bg-slate-50">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-900 text-center">
+            Une plateforme pensée pour vous
+          </h2>
+
+          {/* Toggle */}
+          <div className="mt-6 flex justify-center">
+            <div className="bg-white border border-slate-200 rounded-full p-1 flex">
+              <button
+                onClick={() => setActiveTab('landlord')}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === 'landlord'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Propriétaire
+              </button>
+              <button
+                onClick={() => setActiveTab('tenant')}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === 'tenant'
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Locataire
+              </button>
+            </div>
+          </div>
+
+          {/* Bénéfices */}
+          <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-8 space-y-6">
+            {benefits.map(benefit => (
+              <div key={benefit.title}>
+                <h3 className="font-semibold text-slate-900">{benefit.title}</h3>
+                <div className="w-10 h-0.5 bg-slate-300 mt-1 mb-2" />
+                <p className="text-sm text-slate-600 leading-relaxed">{benefit.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COMMENT ÇA MARCHE */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-900 text-center">Comment ça marche ?</h2>
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {howItWorks.map(item => (
+              <div key={item.step} className="text-center">
+                <div className="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto">
+                  {item.step}
+                </div>
+                <h3 className="font-semibold text-slate-900 mt-4">{item.title}</h3>
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            {activeTab === 'landlord' ? (
+              <Link
+                href="/register"
+                className="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+              >
+                Publier mon premier bien
+              </Link>
+            ) : (
+              <Link
+                href="/biens"
+                className="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+              >
+                Trouver un logement
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA PROPRIÉTAIRE */}
+      <section className="py-16 px-4 bg-slate-900 text-white text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold">Vous êtes propriétaire ?</h2>
+          <p className="text-slate-400 mt-3">
+            Publiez votre bien gratuitement. Payez uniquement quand c'est loué.
+          </p>
+          <Link
+            href="/register"
+            className="mt-6 inline-block bg-white text-slate-900 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-colors"
+          >
+            Commencer gratuitement
+          </Link>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-slate-950 text-slate-400 py-12 px-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div>
+            <p className="text-white font-semibold text-lg">Instant Rent</p>
+            <p className="text-sm mt-2 leading-relaxed">
+              La plateforme de location sous Bail Code Civil. Flexible, transparent, 100% en ligne.
             </p>
           </div>
-        )}
-      </section>
+          <div>
+            <p className="text-white font-medium mb-3">Locataires</p>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/biens" className="hover:text-white">Trouver un logement</Link></li>
+              <li><Link href="/register" className="hover:text-white">Créer un compte</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-white font-medium mb-3">Propriétaires</p>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/register" className="hover:text-white">Publier un bien</Link></li>
+              <li><Link href="/dashboard" className="hover:text-white">Mon espace</Link></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-white font-medium mb-3">Légal</p>
+            <ul className="space-y-2 text-sm">
+              <li><span className="hover:text-white cursor-pointer">Mentions légales</span></li>
+              <li><span className="hover:text-white cursor-pointer">CGU</span></li>
+              <li><span className="hover:text-white cursor-pointer">Confidentialité</span></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto mt-8 pt-8 border-t border-slate-800 text-center text-xs">
+          © 2026 Instant Rent. Tous droits réservés.
+        </div>
+      </footer>
     </div>
   )
 }
