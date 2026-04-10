@@ -58,7 +58,7 @@ export default function NewPropertyPage() {
     })
 
     if (error) {
-      setError('Erreur lors de la création du bien')
+      setError(`Erreur: ${error.message} (code: ${error.code})`)
       setLoading(false)
       return
     }
