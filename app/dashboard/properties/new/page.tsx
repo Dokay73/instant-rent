@@ -197,7 +197,7 @@ export default function NewPropertyPage() {
           <button
             type="submit"
             disabled={loading || durations.length === 0}
-            className="w-full bg-slate-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
+            className="w-full bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white py-3 rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity shadow-lg shadow-[#4A6CF7]/20"
           >
             {loading ? 'Publication...' : 'Publier le bien'}
           </button>

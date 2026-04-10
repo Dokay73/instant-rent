@@ -71,13 +71,20 @@ export default function HomePage() {
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-slate-900 text-white py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="bg-[#0B1F4B] text-white py-24 px-4 relative overflow-hidden">
+        {/* Accent glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#4A6CF7] opacity-10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-block bg-[#4A6CF7]/10 border border-[#4A6CF7]/30 text-[#7B9FFF] text-xs font-medium px-4 py-1.5 rounded-full mb-6">
+            Location flexible · Bail Code Civil · 100% en ligne
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            La location sans contrainte,<br />
-            <span className="text-slate-400">sous Bail Code Civil</span>
+            La location sans contrainte,{' '}
+            <span className="bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] bg-clip-text text-transparent">
+              sous Bail Code Civil
+            </span>
           </h1>
-          <p className="mt-4 text-slate-400 text-lg max-w-2xl mx-auto">
+          <p className="mt-5 text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
             Instant Rent connecte propriétaires et locataires avec une flexibilité totale.
             Aucune durée imposée. Aucun frais si vacant.
           </p>
@@ -89,18 +96,18 @@ export default function HomePage() {
               onChange={e => setCity(e.target.value)}
               type="text"
               placeholder="Rechercher par ville..."
-              className="flex-1 px-4 py-3 rounded-xl text-slate-900 text-sm focus:outline-none"
+              className="flex-1 px-4 py-3 rounded-xl text-slate-900 text-sm focus:outline-none bg-white/95"
             />
             <button
               type="submit"
-              className="bg-white text-slate-900 px-6 py-3 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-colors"
+              className="bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-6 py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               Rechercher
             </button>
           </form>
 
           <div className="mt-4">
-            <Link href="/biens" className="text-slate-400 text-sm hover:text-white underline">
+            <Link href="/biens" className="text-slate-400 text-sm hover:text-white underline transition-colors">
               Voir tous les biens disponibles →
             </Link>
           </div>
@@ -112,7 +119,9 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
           {STATS.map(stat => (
             <div key={stat.value}>
-              <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] bg-clip-text text-transparent">
+                {stat.value}
+              </p>
               <p className="text-sm text-slate-500 mt-1">{stat.label}</p>
             </div>
           ))}
@@ -128,12 +137,12 @@ export default function HomePage() {
 
           {/* Toggle */}
           <div className="mt-6 flex justify-center">
-            <div className="bg-white border border-slate-200 rounded-full p-1 flex">
+            <div className="bg-white border border-slate-200 rounded-full p-1 flex shadow-sm">
               <button
                 onClick={() => setActiveTab('landlord')}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
                   activeTab === 'landlord'
-                    ? 'bg-slate-900 text-white'
+                    ? 'bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white shadow-md'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -141,9 +150,9 @@ export default function HomePage() {
               </button>
               <button
                 onClick={() => setActiveTab('tenant')}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
                   activeTab === 'tenant'
-                    ? 'bg-slate-900 text-white'
+                    ? 'bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white shadow-md'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -153,11 +162,11 @@ export default function HomePage() {
           </div>
 
           {/* Bénéfices */}
-          <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-8 space-y-6">
+          <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-8 space-y-6 shadow-sm">
             {benefits.map(benefit => (
               <div key={benefit.title}>
                 <h3 className="font-semibold text-slate-900">{benefit.title}</h3>
-                <div className="w-10 h-0.5 bg-slate-300 mt-1 mb-2" />
+                <div className="w-10 h-0.5 bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] mt-1 mb-2" />
                 <p className="text-sm text-slate-600 leading-relaxed">{benefit.desc}</p>
               </div>
             ))}
@@ -172,7 +181,7 @@ export default function HomePage() {
           <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
             {howItWorks.map(item => (
               <div key={item.step} className="text-center">
-                <div className="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#4A6CF7] to-[#8B5CF6] text-white rounded-full flex items-center justify-center text-lg font-bold mx-auto shadow-lg shadow-[#4A6CF7]/20">
                   {item.step}
                 </div>
                 <h3 className="font-semibold text-slate-900 mt-4">{item.title}</h3>
@@ -185,14 +194,14 @@ export default function HomePage() {
             {activeTab === 'landlord' ? (
               <Link
                 href="/register"
-                className="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+                className="inline-block bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-8 py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-[#4A6CF7]/25"
               >
                 Publier mon premier bien
               </Link>
             ) : (
               <Link
                 href="/biens"
-                className="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors"
+                className="inline-block bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-8 py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-[#4A6CF7]/25"
               >
                 Trouver un logement
               </Link>
@@ -202,15 +211,16 @@ export default function HomePage() {
       </section>
 
       {/* CTA PROPRIÉTAIRE */}
-      <section className="py-16 px-4 bg-slate-900 text-white text-center">
-        <div className="max-w-2xl mx-auto">
+      <section className="py-16 px-4 bg-[#0B1F4B] text-white text-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#4A6CF7]/10 to-[#8B5CF6]/10 pointer-events-none" />
+        <div className="max-w-2xl mx-auto relative z-10">
           <h2 className="text-2xl font-bold">Vous êtes propriétaire ?</h2>
           <p className="text-slate-400 mt-3">
-            Publiez votre bien gratuitement. Payez uniquement quand c'est loué.
+            Publiez votre bien gratuitement. Payez uniquement quand c&apos;est loué.
           </p>
           <Link
             href="/register"
-            className="mt-6 inline-block bg-white text-slate-900 px-8 py-3 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-colors"
+            className="mt-6 inline-block bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-8 py-3 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-[#4A6CF7]/30"
           >
             Commencer gratuitement
           </Link>
@@ -218,10 +228,12 @@ export default function HomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-slate-950 text-slate-400 py-12 px-4">
+      <footer className="bg-[#060D20] text-slate-400 py-12 px-4">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <p className="text-white font-semibold text-lg">Instant Rent</p>
+            <p className="font-bold text-lg text-white">
+              Instant<span className="bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] bg-clip-text text-transparent"> Rent</span>
+            </p>
             <p className="text-sm mt-2 leading-relaxed">
               La plateforme de location sous Bail Code Civil. Flexible, transparent, 100% en ligne.
             </p>
@@ -229,23 +241,23 @@ export default function HomePage() {
           <div>
             <p className="text-white font-medium mb-3">Locataires</p>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/biens" className="hover:text-white">Trouver un logement</Link></li>
-              <li><Link href="/register" className="hover:text-white">Créer un compte</Link></li>
+              <li><Link href="/biens" className="hover:text-white transition-colors">Trouver un logement</Link></li>
+              <li><Link href="/register" className="hover:text-white transition-colors">Créer un compte</Link></li>
             </ul>
           </div>
           <div>
             <p className="text-white font-medium mb-3">Propriétaires</p>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/register" className="hover:text-white">Publier un bien</Link></li>
-              <li><Link href="/dashboard" className="hover:text-white">Mon espace</Link></li>
+              <li><Link href="/register" className="hover:text-white transition-colors">Publier un bien</Link></li>
+              <li><Link href="/dashboard" className="hover:text-white transition-colors">Mon espace</Link></li>
             </ul>
           </div>
           <div>
             <p className="text-white font-medium mb-3">Légal</p>
             <ul className="space-y-2 text-sm">
-              <li><span className="hover:text-white cursor-pointer">Mentions légales</span></li>
-              <li><span className="hover:text-white cursor-pointer">CGU</span></li>
-              <li><span className="hover:text-white cursor-pointer">Confidentialité</span></li>
+              <li><span className="hover:text-white cursor-pointer transition-colors">Mentions légales</span></li>
+              <li><span className="hover:text-white cursor-pointer transition-colors">CGU</span></li>
+              <li><span className="hover:text-white cursor-pointer transition-colors">Confidentialité</span></li>
             </ul>
           </div>
         </div>

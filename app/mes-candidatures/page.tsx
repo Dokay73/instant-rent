@@ -67,7 +67,7 @@ export default async function MesCandidaturesPage() {
                         href={contract.pdf_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors"
+                        className="text-sm bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
                       >
                         Télécharger mon bail PDF
                       </a>
@@ -87,7 +87,7 @@ export default async function MesCandidaturesPage() {
               <p className="text-slate-400">Aucune candidature pour le moment</p>
               <Link
                 href="/biens"
-                className="mt-4 inline-block bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+                className="mt-4 inline-block bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
               >
                 Trouver un logement
               </Link>

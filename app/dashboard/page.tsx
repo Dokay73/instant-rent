@@ -42,7 +42,7 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/dashboard/properties/new"
-            className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+            className="bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity shadow-md shadow-[#4A6CF7]/20"
           >
             + Ajouter un bien
           </Link>
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
               <p className="text-slate-400">Aucun bien publié pour le moment</p>
               <Link
                 href="/dashboard/properties/new"
-                className="mt-4 inline-block bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+                className="mt-4 inline-block bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
               >
                 Publier mon premier bien
               </Link>
