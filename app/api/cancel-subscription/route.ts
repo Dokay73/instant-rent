@@ -11,6 +11,7 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  try {
   // Vérifier que l'utilisateur est bien le propriétaire
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -63,4 +64,8 @@ export async function POST(req: NextRequest) {
     .eq('id', applicationId)
 
   return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Cancel subscription error:', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }

@@ -21,16 +21,24 @@ export default function CancelBailButton({
     }
 
     setLoading(true)
-    const res = await fetch('/api/cancel-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ applicationId, propertyId }),
-    })
+    try {
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicationId, propertyId }),
+      })
 
-    if (res.ok) {
-      router.refresh()
-    } else {
-      alert('Erreur lors de la résiliation')
+      const data = await res.json()
+
+      if (res.ok) {
+        router.refresh()
+      } else {
+        alert(`Erreur: ${data.error || res.status}`)
+        setLoading(false)
+        setConfirmed(false)
+      }
+    } catch (err) {
+      alert(`Erreur réseau: ${err}`)
       setLoading(false)
       setConfirmed(false)
     }
