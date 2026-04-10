@@ -36,15 +36,19 @@ export async function POST(req: NextRequest) {
     .eq('is_active', true)
     .single()
 
+  // Annuler dans Stripe (non bloquant si ça échoue)
   if (subscription?.stripe_sub_id) {
-    // Annuler dans Stripe (à la fin de la période en cours)
-    await stripe.subscriptions.cancel(subscription.stripe_sub_id)
+    try {
+      await stripe.subscriptions.cancel(subscription.stripe_sub_id)
+    } catch (err) {
+      console.error('Stripe cancel error (non bloquant):', err)
+    }
   }
 
   // Mettre à jour la base de données
   await supabaseAdmin
     .from('subscriptions')
-    .update({ is_active: false, ended_at: new Date().toISOString() })
+    .update({ is_active: false })
     .eq('property_id', propertyId)
     .eq('is_active', true)
 
