@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
 
   // Générer le PDF
   const pdfBuffer = await renderToBuffer(
-    createElement(BailTemplate, { data: bailData })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createElement(BailTemplate, { data: bailData }) as any
   )
 
   // Upload dans Supabase Storage
