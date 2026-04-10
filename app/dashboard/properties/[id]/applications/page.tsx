@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import ApplicationActions from './ApplicationActions'
+import GenerateBailButton from './GenerateBailButton'
 
 export default async function ApplicationsPage({
   params,
@@ -26,7 +27,7 @@ export default async function ApplicationsPage({
 
   const { data: applications } = await supabase
     .from('applications')
-    .select('*, profiles(full_name)')
+    .select('*, profiles(full_name), contracts(pdf_url)')
     .eq('property_id', id)
     .order('created_at', { ascending: false })
 
@@ -101,6 +102,14 @@ export default async function ApplicationsPage({
                   {/* Actions */}
                   {app.status === 'pending' && (
                     <ApplicationActions applicationId={app.id} propertyId={id} />
+                  )}
+                  {app.status === 'validated' && (
+                    <div className="mt-4">
+                      <GenerateBailButton
+                        applicationId={app.id}
+                        existingUrl={app.contracts?.[0]?.pdf_url}
+                      />
+                    </div>
                   )}
                 </div>
               )

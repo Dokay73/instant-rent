@@ -15,6 +15,9 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Locataire → redirige vers ses candidatures
+  if (profile?.role === 'tenant') redirect('/mes-candidatures')
+
   const { data: properties } = await supabase
     .from('properties')
     .select('*, applications(count)')

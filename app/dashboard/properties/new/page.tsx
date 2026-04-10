@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 
 const DURATION_OPTIONS = [1, 2, 3, 6, 9, 12, 18, 24]
+const NOTICE_OPTIONS = [15, 30, 60]
+const CHARGES_OPTIONS = ['Eau', 'Électricité', 'Gaz', 'Internet', 'Chauffage', 'Ordures ménagères']
 
 export default function NewPropertyPage() {
   const router = useRouter()
@@ -13,10 +15,18 @@ export default function NewPropertyPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [durations, setDurations] = useState<number[]>([1, 3, 6, 12])
+  const [chargesIncluded, setChargesIncluded] = useState<string[]>(['Eau', 'Électricité', 'Internet'])
+  const [noticeDays, setNoticeDays] = useState(30)
 
   const toggleDuration = (d: number) => {
     setDurations(prev =>
       prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b)
+    )
+  }
+
+  const toggleCharge = (c: string) => {
+    setChargesIncluded(prev =>
+      prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
     )
   }
 
@@ -41,6 +51,9 @@ export default function NewPropertyPage() {
       description: data.get('description') as string,
       criteria_min_income: data.get('min_income') ? parseFloat(data.get('min_income') as string) : null,
       allowed_durations: durations,
+      surface: data.get('surface') ? parseFloat(data.get('surface') as string) : null,
+      charges_included: chargesIncluded,
+      notice_days: noticeDays,
       status: 'vacant',
     })
 
@@ -70,9 +83,15 @@ export default function NewPropertyPage() {
               <label className="block text-sm text-slate-600 mb-1">Adresse complète</label>
               <input name="address" required className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="12 rue de la Paix" />
             </div>
-            <div>
-              <label className="block text-sm text-slate-600 mb-1">Ville</label>
-              <input name="city" required className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Paris" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Ville</label>
+                <input name="city" required className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="Paris" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-600 mb-1">Superficie (m²)</label>
+                <input name="surface" type="number" min="1" step="0.5" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" placeholder="35" />
+              </div>
             </div>
           </div>
 
@@ -99,6 +118,27 @@ export default function NewPropertyPage() {
             </div>
           </div>
 
+          {/* Charges incluses */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6">
+            <h2 className="text-sm font-medium text-slate-900 mb-3">Charges incluses dans le loyer</h2>
+            <div className="flex flex-wrap gap-2">
+              {CHARGES_OPTIONS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleCharge(c)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                    chargesIncluded.includes(c)
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-slate-900'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Durées */}
           <div className="bg-white border border-slate-200 rounded-xl p-6">
             <h2 className="text-sm font-medium text-slate-900 mb-3">Durées de bail acceptées</h2>
@@ -120,6 +160,27 @@ export default function NewPropertyPage() {
             </div>
           </div>
 
+          {/* Préavis */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6">
+            <h2 className="text-sm font-medium text-slate-900 mb-3">Durée de préavis</h2>
+            <div className="flex gap-2">
+              {NOTICE_OPTIONS.map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setNoticeDays(n)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                    noticeDays === n
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-slate-900'
+                  }`}
+                >
+                  {n} jours
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Description */}
           <div className="bg-white border border-slate-200 rounded-xl p-6">
             <h2 className="text-sm font-medium text-slate-900 mb-3">Description</h2>
@@ -127,7 +188,7 @@ export default function NewPropertyPage() {
               name="description"
               rows={4}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-              placeholder="Décrivez votre bien (superficie, équipements, étage...)"
+              placeholder="Décrivez votre bien (équipements, étage, proximité transports...)"
             />
           </div>
 
