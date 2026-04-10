@@ -31,7 +31,7 @@ export default function CancelBailButton({
       const data = await res.json()
 
       if (res.ok) {
-        router.refresh()
+        window.location.reload()
       } else {
         alert(`Erreur: ${data.error || res.status}`)
         setLoading(false)

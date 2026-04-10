@@ -52,10 +52,12 @@ export default async function MesCandidaturesPage() {
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                       app.status === 'validated' ? 'bg-green-100 text-green-700' :
                       app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      app.status === 'ended' ? 'bg-slate-100 text-slate-500' :
                       'bg-amber-100 text-amber-700'
                     }`}>
                       {app.status === 'validated' ? 'Accepté' :
-                       app.status === 'rejected' ? 'Refusé' : 'En attente'}
+                       app.status === 'rejected' ? 'Refusé' :
+                       app.status === 'ended' ? 'Bail terminé' : 'En attente'}
                     </span>
                   </div>
 
