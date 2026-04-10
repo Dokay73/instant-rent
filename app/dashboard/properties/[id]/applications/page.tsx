@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import ApplicationActions from './ApplicationActions'
 import GenerateBailButton from './GenerateBailButton'
+import CancelBailButton from './CancelBailButton'
 
 export default async function ApplicationsPage({
   params,
@@ -67,10 +68,12 @@ export default async function ApplicationsPage({
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                       app.status === 'validated' ? 'bg-green-100 text-green-700' :
                       app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      app.status === 'ended' ? 'bg-slate-100 text-slate-500' :
                       'bg-amber-100 text-amber-700'
                     }`}>
-                      {app.status === 'validated' ? 'Validé' :
-                       app.status === 'rejected' ? 'Refusé' : 'En attente'}
+                      {app.status === 'validated' ? 'Loué' :
+                       app.status === 'rejected' ? 'Refusé' :
+                       app.status === 'ended' ? 'Bail terminé' : 'En attente'}
                     </span>
                   </div>
 
@@ -104,10 +107,14 @@ export default async function ApplicationsPage({
                     <ApplicationActions applicationId={app.id} propertyId={id} />
                   )}
                   {app.status === 'validated' && (
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
                       <GenerateBailButton
                         applicationId={app.id}
                         existingUrl={app.contracts?.[0]?.pdf_url}
+                      />
+                      <CancelBailButton
+                        applicationId={app.id}
+                        propertyId={id}
                       />
                     </div>
                   )}
