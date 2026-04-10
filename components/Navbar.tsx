@@ -3,22 +3,46 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 export default function Navbar() {
   const [user, setUser] = useState<{ email?: string } | null>(null)
+  const [profile, setProfile] = useState<{ full_name?: string } | null>(null)
+  const [open, setOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      if (data.user) {
+        supabase.from('profiles').select('full_name').eq('id', data.user.id).single()
+          .then(({ data: p }) => setProfile(p))
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
+    setOpen(false)
     router.push('/')
     router.refresh()
   }
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
 
   return (
     <header className="bg-[#0B1F4B] shadow-lg">
@@ -33,17 +57,51 @@ export default function Navbar() {
           </Link>
 
           {user ? (
-            <>
-              <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition-colors">
-                Dashboard
-              </Link>
+            <div className="relative" ref={dropdownRef}>
               <button
-                onClick={handleLogout}
-                className="text-sm text-slate-300 hover:text-white transition-colors"
+                onClick={() => setOpen(!open)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                Déconnexion
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#4A6CF7] to-[#8B5CF6] flex items-center justify-center text-white text-sm font-bold shadow-md">
+                  {initials}
+                </div>
+                <span className="text-sm text-white font-medium hidden md:block">
+                  {profile?.full_name?.split(' ')[0] ?? ''}
+                </span>
+                <svg className={`w-4 h-4 text-slate-300 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-            </>
+
+              {open && (
+                <div className="absolute right-0 top-12 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                    <p className="text-xs text-slate-400">Connecté en tant que</p>
+                    <p className="text-sm font-medium text-slate-900 truncate">{user.email}</p>
+                  </div>
+
+                  <Link href="/dashboard" onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <span>🏠</span> Tableau de bord
+                  </Link>
+                  <Link href="/mes-candidatures" onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <span>📋</span> Mes candidatures
+                  </Link>
+                  <Link href="/profil" onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <span>⚙️</span> Mon profil
+                  </Link>
+
+                  <div className="border-t border-slate-100 mt-1 pt-1">
+                    <button onClick={handleLogout}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors w-full text-left">
+                      <span>↪</span> Déconnexion
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link href="/login" className="text-sm text-slate-300 hover:text-white transition-colors">
