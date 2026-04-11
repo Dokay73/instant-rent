@@ -15,7 +15,8 @@ export default async function MesCandidaturesPage() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role === 'landlord') redirect('/dashboard')
+  // Page gardée pour compatibilité — redirige vers dashboard
+  redirect('/dashboard')
 
   const { data: applications } = await supabase
     .from('applications')

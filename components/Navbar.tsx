@@ -84,9 +84,9 @@ export default function Navbar() {
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <span>🏠</span> Tableau de bord
                   </Link>
-                  <Link href="/mes-candidatures" onClick={() => setOpen(false)}
+                  <Link href="/biens" onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                    <span>📋</span> Mes candidatures
+                    <span>🔍</span> Trouver un logement
                   </Link>
                   <Link href="/profil" onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
