@@ -32,70 +32,90 @@ export default async function ApplicationsPage({
     .eq('property_id', id)
     .order('created_at', { ascending: false })
 
+  const statusMap = {
+    validated: { label: 'Loué', class: 'bg-green-50 text-green-700' },
+    rejected: { label: 'Refusé', class: 'bg-red-50 text-red-600' },
+    ended: { label: 'Bail terminé', class: 'bg-slate-100 text-slate-500' },
+    pending: { label: 'En attente', class: 'bg-amber-50 text-amber-700' },
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-10">
-        <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-900">
-          ← Retour au dashboard
+
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Retour au tableau de bord
         </Link>
 
-        <div className="mt-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Candidatures reçues</h1>
-          <p className="text-slate-500 mt-1 text-sm">{property.address} — {property.city}</p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mb-1">Candidatures reçues</p>
+            <h1 className="text-2xl font-bold text-slate-900">{property.address}</h1>
+            <p className="text-slate-400 text-sm mt-0.5">{property.city}</p>
+          </div>
+          <div className="flex-shrink-0 text-right">
+            <p className="text-2xl font-bold text-slate-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {applications?.length ?? 0}
+            </p>
+            <p className="text-xs text-slate-400">dossier{(applications?.length ?? 0) > 1 ? 's' : ''}</p>
+          </div>
         </div>
 
-        <div className="mt-8 space-y-4">
+        <div className="space-y-4">
           {applications && applications.length > 0 ? (
             applications.map(app => {
-              const minIncome = property.criteria_min_income
               const docs = app.docs_urls as Record<string, string>
-              const docKeys = ['id_card', 'work_contract', 'proof_of_address']
-              const allDocs = docKeys.every(k => docs?.[k])
+              const docList = [
+                { key: 'id_card', label: "Pièce d'identité" },
+                { key: 'work_contract', label: 'Contrat de travail' },
+                { key: 'proof_of_address', label: 'Justif. domicile' },
+              ]
+              const status = statusMap[app.status as keyof typeof statusMap] ?? statusMap.pending
 
               return (
-                <div key={app.id} className="bg-white border border-slate-200 rounded-xl p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-slate-900">{app.profiles?.full_name}</p>
-                      <p className="text-sm text-slate-500 mt-0.5">
-                        Durée souhaitée : <span className="font-medium">{app.duration_selected} mois</span>
-                      </p>
-                      {app.message && (
-                        <p className="text-sm text-slate-600 mt-2 italic">"{app.message}"</p>
-                      )}
+                <div key={app.id} className="bg-white rounded-2xl border border-slate-100 p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#0B1F4B]/8 flex items-center justify-center text-[#0B1F4B] text-sm font-bold flex-shrink-0">
+                        {(app.profiles?.full_name ?? '?').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900">{app.profiles?.full_name}</p>
+                        <p className="text-sm text-slate-500">
+                          Durée souhaitée : <span className="font-medium text-slate-700">{app.duration_selected} mois</span>
+                        </p>
+                      </div>
                     </div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                      app.status === 'validated' ? 'bg-green-100 text-green-700' :
-                      app.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                      app.status === 'ended' ? 'bg-slate-100 text-slate-500' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {app.status === 'validated' ? 'Loué' :
-                       app.status === 'rejected' ? 'Refusé' :
-                       app.status === 'ended' ? 'Bail terminé' : 'En attente'}
+                    <span className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${status.class}`}>
+                      {status.label}
                     </span>
                   </div>
 
+                  {app.message && (
+                    <div className="mt-4 bg-slate-50 rounded-xl p-4">
+                      <p className="text-sm text-slate-600 italic leading-relaxed">"{app.message}"</p>
+                    </div>
+                  )}
+
                   {/* Documents */}
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {[
-                      { key: 'id_card', label: "Pièce d'identité" },
-                      { key: 'work_contract', label: 'Contrat travail' },
-                      { key: 'proof_of_address', label: 'Justif. domicile' },
-                    ].map(doc => (
+                    {docList.map(doc => (
                       docs?.[doc.key] ? (
                         <a
                           key={doc.key}
                           href={docs[doc.key]}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors"
+                          className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-medium"
                         >
                           {doc.label} ↗
                         </a>
                       ) : (
-                        <span key={doc.key} className="text-xs bg-red-50 text-red-500 px-3 py-1 rounded-full">
+                        <span key={doc.key} className="text-xs bg-red-50 border border-red-100 text-red-500 px-3 py-1.5 rounded-lg">
                           {doc.label} manquant
                         </span>
                       )
@@ -104,10 +124,12 @@ export default async function ApplicationsPage({
 
                   {/* Actions */}
                   {app.status === 'pending' && (
-                    <ApplicationActions applicationId={app.id} propertyId={id} />
+                    <div className="mt-5 pt-4 border-t border-slate-100">
+                      <ApplicationActions applicationId={app.id} propertyId={id} />
+                    </div>
                   )}
                   {app.status === 'validated' && (
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-3">
                       <GenerateBailButton
                         applicationId={app.id}
                         existingUrl={app.contracts?.[0]?.pdf_url}
@@ -122,8 +144,16 @@ export default async function ApplicationsPage({
               )
             })
           ) : (
-            <div className="text-center py-16 text-slate-400">
-              Aucune candidature reçue pour ce bien
+            <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-16 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-20">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+              </div>
+              <p className="text-slate-500 font-medium text-sm">Aucune candidature reçue</p>
+              <p className="text-slate-400 text-xs mt-1">Les dossiers apparaîtront ici dès qu'un locataire postulera</p>
             </div>
           )}
         </div>

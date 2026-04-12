@@ -17,8 +17,11 @@ export default function NotificationsPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return
       setUserId(data.user.id)
-      supabase.from('profiles').select('notif_new_application, notif_application_status, notif_marketing')
-        .eq('id', data.user.id).single()
+      supabase
+        .from('profiles')
+        .select('notif_new_application, notif_application_status, notif_marketing')
+        .eq('id', data.user.id)
+        .single()
         .then(({ data: p }) => {
           if (p) setPrefs({
             notif_new_application: p.notif_new_application ?? true,
@@ -37,41 +40,65 @@ export default function NotificationsPage() {
 
   const toggle = (key: keyof typeof prefs) => setPrefs(p => ({ ...p, [key]: !p[key] }))
 
-  const CheckBox = ({ label, k }: { label: string; k: keyof typeof prefs }) => (
-    <label className="flex items-start gap-3 cursor-pointer group">
-      <div
+  const Toggle = ({ label, description, k }: { label: string; description?: string; k: keyof typeof prefs }) => (
+    <div className="flex items-start justify-between gap-4 py-4 border-b border-slate-50 last:border-0">
+      <div>
+        <p className="text-sm font-medium text-slate-800">{label}</p>
+        {description && <p className="text-xs text-slate-400 mt-0.5">{description}</p>}
+      </div>
+      <button
+        type="button"
         onClick={() => toggle(k)}
-        className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-          prefs[k] ? 'bg-[#4A6CF7] border-[#4A6CF7]' : 'border-slate-300 bg-white group-hover:border-[#4A6CF7]'
+        className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors ${
+          prefs[k] ? 'bg-[#0B1F4B]' : 'bg-slate-200'
         }`}
       >
-        {prefs[k] && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>}
-      </div>
-      <span className="text-sm text-slate-700">{label}</span>
-    </label>
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+          prefs[k] ? 'translate-x-5' : 'translate-x-0'
+        }`} />
+      </button>
+    </div>
   )
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border border-slate-200 rounded-xl p-6">
-        <h2 className="text-sm font-semibold text-slate-900 pb-3 border-b border-slate-100 mb-5">
-          Emails
+      <div className="bg-white border border-slate-100 rounded-2xl p-6">
+        <h2 className="text-sm font-semibold text-slate-900 pb-3 border-b border-slate-50 mb-1">
+          Notifications par email
         </h2>
-        <div className="space-y-4">
-          <CheckBox k="notif_new_application" label="M'envoyer un email lorsque je reçois une nouvelle candidature" />
-          <CheckBox k="notif_application_status" label="M'envoyer un email lorsque le statut de ma candidature change" />
-          <CheckBox k="notif_marketing" label="Je souhaite être informé des nouveautés et offres d'Instant Rent" />
-        </div>
+
+        <Toggle
+          k="notif_new_application"
+          label="Nouvelle candidature"
+          description="Recevoir un email à chaque nouvelle candidature sur vos biens"
+        />
+        <Toggle
+          k="notif_application_status"
+          label="Changement de statut"
+          description="Être informé lorsque votre candidature est acceptée ou refusée"
+        />
+        <Toggle
+          k="notif_marketing"
+          label="Actualités Instant Rent"
+          description="Nouveautés, conseils et offres de la plateforme"
+        />
       </div>
 
       <div className="flex items-center gap-3">
-        <button onClick={handleSave}
-          className="bg-gradient-to-r from-[#4A6CF7] to-[#8B5CF6] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+        <button
+          onClick={handleSave}
+          className="bg-[#0B1F4B] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
+        >
           Enregistrer
         </button>
-        {saved && <span className="text-sm text-green-600 font-medium">✓ Préférences mises à jour</span>}
+        {saved && (
+          <span className="text-sm text-green-600 font-medium flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            Préférences mises à jour
+          </span>
+        )}
       </div>
     </div>
   )
