@@ -2,18 +2,15 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import TogglePublished from '@/components/TogglePublished'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from('profiles').select('*').eq('id', user.id).single()
 
   const { data: properties } = await supabase
     .from('properties')
@@ -28,7 +25,7 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
 
   const occupied = properties?.filter(p => p.status === 'occupied').length ?? 0
-  const vacant = properties?.filter(p => p.status === 'vacant').length ?? 0
+  const published = properties?.filter(p => p.is_published).length ?? 0
   const totalApplications = properties?.reduce((acc, p) => acc + (p.applications?.[0]?.count ?? 0), 0) ?? 0
 
   const initials = profile?.full_name
@@ -58,17 +55,15 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          {/* ── SECTION PROPRIÉTAIRE ── */}
+          {/* ── PROPRIÉTAIRE ── */}
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mb-1">Propriétaire</p>
                 <h2 className="text-lg font-bold text-slate-900">Mes logements</h2>
               </div>
-              <Link
-                href="/dashboard/properties/new"
-                className="text-sm bg-[#0B1F4B] text-white px-4 py-2 rounded-xl hover:bg-[#142d6b] transition-colors font-medium"
-              >
+              <Link href="/dashboard/properties/new"
+                className="text-sm bg-[#0B1F4B] text-white px-4 py-2 rounded-xl hover:bg-[#142d6b] transition-colors font-medium">
                 + Ajouter
               </Link>
             </div>
@@ -76,9 +71,9 @@ export default async function DashboardPage() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { value: properties?.length ?? 0, label: 'Publiés' },
+                { value: properties?.length ?? 0, label: 'Biens' },
+                { value: published, label: 'En ligne' },
                 { value: totalApplications, label: 'Candidatures' },
-                { value: occupied, label: 'Loués' },
               ].map(stat => (
                 <div key={stat.label} className="bg-white rounded-2xl border border-slate-100 p-4 text-center">
                   <p className="text-2xl font-bold text-[#0B1F4B]" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -95,35 +90,46 @@ export default async function DashboardPage() {
                 {properties.map(property => (
                   <div key={property.id} className="bg-white border border-slate-100 rounded-2xl p-5">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate">{property.address}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900 text-sm truncate">
+                          {property.title || property.address}
+                        </p>
                         <p className="text-xs text-slate-400 mt-0.5">{property.city}</p>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <span className="text-sm font-medium text-slate-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
                             {property.rent_hc} € HC
                           </span>
                           <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
                             property.status === 'occupied'
                               ? 'bg-green-50 text-green-700'
-                              : 'bg-amber-50 text-amber-700'
+                              : property.is_published
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-slate-100 text-slate-500'
                           }`}>
-                            {property.status === 'occupied' ? 'Loué' : 'Vacant'}
+                            {property.status === 'occupied' ? 'Loué' : property.is_published ? 'En ligne' : 'Brouillon'}
                           </span>
                         </div>
                       </div>
-                      <Link
-                        href={`/dashboard/properties/${property.id}/applications`}
-                        className="flex-shrink-0 text-xs text-[#4A6CF7] border border-[#4A6CF7]/20 bg-[#4A6CF7]/5 px-3 py-1.5 rounded-xl hover:bg-[#4A6CF7]/10 transition-colors font-medium"
-                      >
-                        {property.applications?.[0]?.count ?? 0} dossier{(property.applications?.[0]?.count ?? 0) > 1 ? 's' : ''}
-                      </Link>
+
+                      <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                        {/* Toggle en ligne / hors ligne */}
+                        {property.status !== 'occupied' && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400">{property.is_published ? 'En ligne' : 'Hors ligne'}</span>
+                            <TogglePublished propertyId={property.id} initialValue={property.is_published ?? false} />
+                          </div>
+                        )}
+                        <Link
+                          href={`/dashboard/properties/${property.id}/applications`}
+                          className="text-xs text-[#4A6CF7] border border-[#4A6CF7]/20 bg-[#4A6CF7]/5 px-3 py-1.5 rounded-xl hover:bg-[#4A6CF7]/10 transition-colors font-medium">
+                          {property.applications?.[0]?.count ?? 0} dossier{(property.applications?.[0]?.count ?? 0) > 1 ? 's' : ''}
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}
-                <Link
-                  href="/dashboard/properties/new"
-                  className="block text-center text-sm text-[#4A6CF7] hover:underline py-2"
-                >
+                <Link href="/dashboard/properties/new"
+                  className="block text-center text-sm text-[#4A6CF7] hover:underline py-2">
                   + Ajouter un logement
                 </Link>
               </div>
@@ -136,18 +142,16 @@ export default async function DashboardPage() {
                   </svg>
                 </div>
                 <p className="text-slate-500 text-sm font-medium">Aucun bien publié</p>
-                <p className="text-slate-400 text-xs mt-1">Publiez votre premier bien en 5 minutes</p>
-                <Link
-                  href="/dashboard/properties/new"
-                  className="mt-4 inline-block bg-[#0B1F4B] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
-                >
+                <p className="text-slate-400 text-xs mt-1">Publiez votre premier bien en quelques minutes</p>
+                <Link href="/dashboard/properties/new"
+                  className="mt-4 inline-block bg-[#0B1F4B] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors">
                   Publier un bien
                 </Link>
               </div>
             )}
           </div>
 
-          {/* ── SECTION LOCATAIRE ── */}
+          {/* ── LOCATAIRE ── */}
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
@@ -196,16 +200,13 @@ export default async function DashboardPage() {
               <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-10 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" strokeWidth="1.5" className="opacity-20" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
+                    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                   </svg>
                 </div>
                 <p className="text-slate-500 text-sm font-medium">Aucune candidature</p>
                 <p className="text-slate-400 text-xs mt-1">Parcourez les biens disponibles</p>
-                <Link
-                  href="/biens"
-                  className="mt-4 inline-block bg-[#0B1F4B] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
-                >
+                <Link href="/biens"
+                  className="mt-4 inline-block bg-[#0B1F4B] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors">
                   Trouver un logement
                 </Link>
               </div>

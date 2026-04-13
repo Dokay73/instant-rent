@@ -14,6 +14,7 @@ export default async function BiensPage({
     .from('properties')
     .select('*')
     .eq('status', 'vacant')
+    .eq('is_published', true)
     .order('created_at', { ascending: false })
 
   if (city) {
@@ -42,24 +43,14 @@ export default async function BiensPage({
             </div>
 
             <form method="GET" className="flex gap-2 w-full md:w-auto md:max-w-sm">
-              <input
-                name="city"
-                defaultValue={city}
-                type="text"
-                placeholder="Filtrer par ville..."
-                className="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F4B] bg-white"
-              />
-              <button
-                type="submit"
-                className="bg-[#0B1F4B] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#142d6b] transition-colors flex-shrink-0"
-              >
+              <input name="city" defaultValue={city} type="text" placeholder="Filtrer par ville..."
+                className="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F4B] bg-white" />
+              <button type="submit"
+                className="bg-[#0B1F4B] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#142d6b] transition-colors flex-shrink-0">
                 Filtrer
               </button>
               {city && (
-                <a
-                  href="/biens"
-                  className="px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0"
-                >
+                <a href="/biens" className="px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0">
                   ✕
                 </a>
               )}
