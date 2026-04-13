@@ -178,42 +178,84 @@ export default function NewPropertyPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 py-10">
+      <div className="max-w-6xl mx-auto px-4 py-10">
 
         <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          Retour
+          Retour au tableau de bord
         </Link>
 
-        <h1 className="text-2xl font-bold text-slate-900">Publier un bien</h1>
+        <div className="flex gap-8 items-start">
 
-        {/* Step indicator */}
-        <div className="mt-6 mb-8">
-          <div className="flex items-center">
-            {STEPS.map((label, i) => (
-              <div key={i} className="flex items-center flex-1 last:flex-none">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
-                  i < step ? 'bg-[#0B1F4B] text-white' :
-                  i === step ? 'bg-[#4A6CF7] text-white shadow-lg shadow-[#4A6CF7]/30' :
-                  'bg-slate-100 text-slate-400'
-                }`}>
-                  {i < step ? (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                  ) : i + 1}
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-1 transition-colors ${i < step ? 'bg-[#0B1F4B]' : 'bg-slate-100'}`} />
-                )}
+          {/* ── Sidebar navigation ── */}
+          <aside className="hidden md:block w-56 flex-shrink-0 sticky top-6">
+            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              {STEPS.map((label, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => { setError(''); setStep(i) }}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm border-b border-slate-50 last:border-0 transition-colors text-left ${
+                    i === step
+                      ? 'bg-[#0B1F4B] text-white font-semibold'
+                      : i < step
+                      ? 'text-slate-600 hover:bg-slate-50'
+                      : 'text-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    i === step ? 'bg-white/20 text-white' :
+                    i < step ? 'bg-green-100 text-green-700' :
+                    'bg-slate-100 text-slate-400'
+                  }`}>
+                    {i < step ? (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    ) : i + 1}
+                  </span>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Progress */}
+            <div className="mt-4 bg-white rounded-2xl border border-slate-100 p-4">
+              <div className="flex justify-between text-xs text-slate-500 mb-2">
+                <span>Progression</span>
+                <span>{Math.round((step / (STEPS.length - 1)) * 100)}%</span>
               </div>
-            ))}
-          </div>
-          <p className="text-sm font-semibold text-slate-900 mt-3">{STEPS[step]}</p>
-          <p className="text-xs text-slate-400">Étape {step + 1} sur {STEPS.length}</p>
-        </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#0B1F4B] rounded-full transition-all duration-300"
+                  style={{ width: `${Math.round((step / (STEPS.length - 1)) * 100)}%` }}
+                />
+              </div>
+            </div>
+          </aside>
+
+          {/* ── Main content ── */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-slate-900">{STEPS[step]}</h1>
+              <p className="text-sm text-slate-400 mt-0.5">Étape {step + 1} sur {STEPS.length}</p>
+            </div>
+
+            {/* Mobile step bar */}
+            <div className="md:hidden flex gap-1 mb-6 overflow-x-auto pb-1">
+              {STEPS.map((label, i) => (
+                <button key={i} type="button" onClick={() => { setError(''); setStep(i) }}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                    i === step ? 'bg-[#0B1F4B] text-white' :
+                    i < step ? 'bg-green-50 text-green-700' :
+                    'bg-white border border-slate-200 text-slate-500'
+                  }`}>
+                  {i + 1}. {label}
+                </button>
+              ))}
+            </div>
 
         <div className="space-y-5">
 
@@ -531,5 +573,7 @@ export default function NewPropertyPage() {
         </div>
       </div>
     </div>
+  </div>
+</div>
   )
 }
