@@ -330,6 +330,31 @@ export default function NewPropertyPage() {
           {/* ── STEP 2 : Équipements ── */}
           {step === 2 && (
             <>
+              {/* Rappel légal meublé */}
+              {furnished && (
+                <div className="border border-amber-200 bg-amber-50 rounded-2xl p-5">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">Équipements obligatoires pour un meublé</p>
+                  <p className="text-xs text-amber-700 mb-3">Pour être considéré comme meublé, votre logement doit comporter a minima :</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1">
+                    {[
+                      'Cuisine équipée', 'Four ou micro-ondes', 'Plaques de cuisson',
+                      'Réfrigérateur', 'Compartiment congélateur', 'Ustensiles de cuisine',
+                      'Vaisselle', 'Table', 'Sièges',
+                      'Couette / couverture', 'Rangements', 'Luminaires',
+                      'Matériel entretien ménager', 'Rideaux / volets', 'Chauffage',
+                    ].map(item => (
+                      <p key={item} className="text-xs text-amber-700 flex items-center gap-1.5 py-0.5">
+                        <span className="w-1 h-1 rounded-full bg-amber-400 flex-shrink-0" />
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                  <p className="text-xs text-amber-600 mt-3 italic">
+                    Le locataire est en droit d'exiger la présence de ces équipements lors de son entrée dans les lieux.
+                  </p>
+                </div>
+              )}
+
               <div className="bg-white rounded-2xl border border-slate-100 p-6">
                 <h2 className="text-sm font-semibold text-slate-900 mb-4">Équipements disponibles</h2>
                 <div className="flex flex-wrap gap-2">
