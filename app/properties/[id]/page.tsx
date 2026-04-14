@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
+import FavoriteButton from '@/components/FavoriteButton'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -211,6 +212,10 @@ export default async function PropertyPage({
               </Link>
 
               <p className="text-center text-xs text-slate-400 mt-3">Bail Code Civil · Réponse sous 24h</p>
+
+              <div className="mt-3">
+                <FavoriteButton propertyId={property.id} />
+              </div>
             </div>
 
             {/* Propriétaire */}
