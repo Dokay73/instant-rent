@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
@@ -37,13 +37,17 @@ const PRESTATIONS = [
 
 type PrestaStatus = 'inclus' | 'non_inclus' | 'non_applicable'
 
-export default function NewPropertyPage() {
+export default function EditPropertyPage() {
   const router = useRouter()
+  const params = useParams()
+  const propertyId = params?.id as string
   const supabase = createClient()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [error, setError] = useState('')
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
   // Step 0 — Localisation
   const [address, setAddress] = useState('')
@@ -91,12 +95,64 @@ export default function NewPropertyPage() {
 
   // Step 5 — Photos
   const [photos, setPhotos] = useState<File[]>([])
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([])
   const [virtualTourUrl, setVirtualTourUrl] = useState('')
 
   // Step 6 — Publication
   const [isOwner, setIsOwner] = useState(true)
   const [attestationFile, setAttestationFile] = useState<File | null>(null)
-  const [cguAccepted, setCguAccepted] = useState(false)
+  const [existingAttestationUrl, setExistingAttestationUrl] = useState('')
+  const [cguAccepted, setCguAccepted] = useState(true)
+  const [isPublished, setIsPublished] = useState(false)
+  const [propertyStatus, setPropertyStatus] = useState<'vacant' | 'occupied'>('vacant')
+
+  useEffect(() => {
+    if (!propertyId) return
+    supabase.auth.getUser().then(async ({ data: userData }) => {
+      if (!userData.user) { router.push('/login'); return }
+      const { data: p, error: loadError } = await supabase
+        .from('properties').select('*').eq('id', propertyId).single()
+      if (loadError || !p || p.owner_id !== userData.user.id) {
+        setNotFound(true); setInitialLoading(false); return
+      }
+      setAddress(p.address ?? '')
+      setCity(p.city ?? '')
+      setSurface(p.surface?.toString() ?? '')
+      setPropertyType(p.property_type ?? 'Studio')
+      setFurnished(p.furnished ?? true)
+      setRooms(p.rooms ?? 1)
+      setTitle(p.title ?? '')
+      setDescription(p.description ?? '')
+      setEquipments(p.equipments ?? [])
+      setPetsAllowed(p.pets_allowed ?? false)
+      setSmokingAllowed(p.smoking_allowed ?? false)
+      setHandicapAccessible(p.handicap_accessible ?? false)
+      setRentHc(p.rent_hc?.toString() ?? '')
+      setCharges(p.charges?.toString() ?? '0')
+      setDeposit(p.deposit?.toString() ?? '')
+      setMinIncome(p.criteria_min_income?.toString() ?? '')
+      setZoneTendue(p.zone_tendue ?? null)
+      setChargesMode(p.charges_mode ?? 'provisions')
+      if (p.prestations) setPrestations(p.prestations)
+      setDepositMethods(p.deposit_payment_methods ?? [])
+      setDpeClass(p.dpe_class ?? '')
+      setDpeDate(p.dpe_date ?? '')
+      setDpeEnergyValue(p.dpe_energy_value?.toString() ?? '')
+      setDpeGesClass(p.dpe_ges_class ?? '')
+      setDpeGesValue(p.dpe_ges_value?.toString() ?? '')
+      setDpeCostMin(p.dpe_cost_min?.toString() ?? '')
+      setDpeCostMax(p.dpe_cost_max?.toString() ?? '')
+      setDurations(p.allowed_durations ?? [1, 3, 6, 12])
+      setNoticeDays(p.notice_days ?? 30)
+      setExistingPhotos(p.images_urls ?? [])
+      setVirtualTourUrl(p.virtual_tour_url ?? '')
+      setIsOwner(p.is_owner ?? true)
+      setExistingAttestationUrl(p.attestation_url ?? '')
+      setIsPublished(p.is_published ?? false)
+      setPropertyStatus(p.status ?? 'vacant')
+      setInitialLoading(false)
+    })
+  }, [propertyId])
 
   const toggleEquipment = (e: string) =>
     setEquipments(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e])
@@ -125,26 +181,22 @@ export default function NewPropertyPage() {
       setError('Sélectionnez au moins une durée.')
       return false
     }
-    if (step === 5 && photos.length < 4) {
-      setError('Ajoutez au moins 4 photos pour continuer.')
+    if (step === 5 && (existingPhotos.length + photos.length) < 4) {
+      setError('Le logement doit avoir au moins 4 photos.')
       return false
     }
     return true
   }
 
-  async function handleSubmit(isPublished: boolean) {
-    if (!cguAccepted) {
-      setError("Vous devez accepter les conditions générales d'utilisation.")
-      return
-    }
+  async function handleSubmit(publishValue: boolean) {
     setLoading(true)
     setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    // Upload photos
-    let imageUrls: string[] = []
+    // Upload new photos
+    let newUrls: string[] = []
     if (photos.length > 0) {
       setUploadingPhotos(true)
       for (const photo of photos) {
@@ -153,14 +205,16 @@ export default function NewPropertyPage() {
         const { error: uploadError } = await supabase.storage.from('property-images').upload(path, photo)
         if (!uploadError) {
           const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(path)
-          imageUrls.push(publicUrl)
+          newUrls.push(publicUrl)
         }
       }
       setUploadingPhotos(false)
     }
 
-    // Upload attestation
-    let attestationUrl = ''
+    const imageUrls = [...existingPhotos, ...newUrls]
+
+    // Upload new attestation if provided
+    let attestationUrl = existingAttestationUrl
     if (attestationFile) {
       const ext = attestationFile.name.split('.').pop()
       const path = `${user.id}/attestation-${Date.now()}.${ext}`
@@ -171,8 +225,7 @@ export default function NewPropertyPage() {
       }
     }
 
-    const { error: insertError } = await supabase.from('properties').insert({
-      owner_id: user.id,
+    const { error: updateError } = await supabase.from('properties').update({
       address, city,
       surface: parseFloat(surface),
       property_type: propertyType,
@@ -201,12 +254,11 @@ export default function NewPropertyPage() {
       virtual_tour_url: virtualTourUrl || null,
       attestation_url: attestationUrl || null,
       is_owner: isOwner,
-      status: 'vacant',
-      is_published: isPublished,
-    })
+      is_published: publishValue,
+    }).eq('id', propertyId)
 
-    if (insertError) {
-      setError(`Erreur : ${insertError.message}`)
+    if (updateError) {
+      setError(`Erreur : ${updateError.message}`)
       setLoading(false)
       return
     }
@@ -235,6 +287,31 @@ export default function NewPropertyPage() {
 
   const totalRent = (parseFloat(rentHc) || 0) + (parseFloat(charges) || 0)
   const netRent = totalRent - 29
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-6xl mx-auto px-4 py-10">
+          <p className="text-sm text-slate-500">Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-6xl mx-auto px-4 py-10">
+          <div className="bg-white border border-slate-100 rounded-2xl p-10 text-center">
+            <p className="text-sm text-slate-500 mb-4">Bien introuvable ou vous n'avez pas les droits pour le modifier.</p>
+            <Link href="/dashboard" className="text-sm text-[#4A6CF7] hover:underline">Retour au tableau de bord</Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -290,6 +367,7 @@ export default function NewPropertyPage() {
           {/* ── Main content ── */}
           <div className="flex-1 min-w-0">
             <div className="mb-6">
+              <p className="text-xs text-[#4A6CF7] font-semibold uppercase tracking-wide mb-1">Modifier le bien</p>
               <h1 className="text-2xl font-bold text-slate-900">{STEPS[step]}</h1>
               <p className="text-sm text-slate-400 mt-0.5">Étape {step + 1} sur {STEPS.length}</p>
             </div>
@@ -677,22 +755,23 @@ export default function NewPropertyPage() {
                           <circle cx="8.5" cy="8.5" r="1.5" />
                           <path d="M21 15l-5-5L5 21" />
                         </svg>
-                        <p className="text-sm font-medium text-slate-600">Glissez vos photos ou cliquez ici</p>
+                        <p className="text-sm font-medium text-slate-600">Ajouter des photos</p>
                         <p className="text-xs text-slate-400">JPG, PNG — max 10 Mo par photo</p>
                       </div>
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={e => {
                           const files = Array.from(e.target.files ?? [])
-                          setPhotos(prev => [...prev, ...files].slice(0, 25))
+                          const remaining = 25 - existingPhotos.length - photos.length
+                          setPhotos(prev => [...prev, ...files.slice(0, remaining)])
                         }} />
                     </label>
 
-                    {photos.length > 0 && (
+                    {(existingPhotos.length > 0 || photos.length > 0) && (
                       <div className="mt-4 grid grid-cols-3 gap-3">
-                        {photos.map((photo, i) => (
-                          <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group">
-                            <img src={URL.createObjectURL(photo)} alt="" className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => setPhotos(prev => prev.filter((_, j) => j !== i))}
+                        {existingPhotos.map((url, i) => (
+                          <div key={`ex-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setExistingPhotos(prev => prev.filter((_, j) => j !== i))}
                               className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                               ✕
                             </button>
@@ -701,13 +780,23 @@ export default function NewPropertyPage() {
                             )}
                           </div>
                         ))}
+                        {photos.map((photo, i) => (
+                          <div key={`new-${i}`} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group ring-2 ring-[#4A6CF7]/40">
+                            <img src={URL.createObjectURL(photo)} alt="" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setPhotos(prev => prev.filter((_, j) => j !== i))}
+                              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                              ✕
+                            </button>
+                            <span className="absolute bottom-1.5 left-1.5 text-xs bg-[#4A6CF7] text-white px-2 py-0.5 rounded-lg">Nouvelle</span>
+                          </div>
+                        ))}
                       </div>
                     )}
 
                     <div className="flex items-center justify-between mt-3">
-                      <p className="text-xs text-slate-400">{photos.length}/25 photos</p>
-                      {photos.length < 4 && (
-                        <p className="text-xs text-amber-600">{4 - photos.length} photo{4 - photos.length > 1 ? 's' : ''} manquante{4 - photos.length > 1 ? 's' : ''} pour continuer</p>
+                      <p className="text-xs text-slate-400">{existingPhotos.length + photos.length}/25 photos</p>
+                      {(existingPhotos.length + photos.length) < 4 && (
+                        <p className="text-xs text-amber-600">{4 - (existingPhotos.length + photos.length)} photo(s) manquante(s)</p>
                       )}
                     </div>
                   </div>
@@ -749,7 +838,7 @@ export default function NewPropertyPage() {
                         { label: 'Dépôt de garantie', value: deposit ? `${deposit} €` : 'Non renseigné' },
                         { label: 'Durées', value: durations.map(d => `${d} mois`).join(', ') || 'Non renseigné' },
                         { label: 'DPE', value: dpeClass || 'Non renseigné' },
-                        { label: 'Photos', value: `${photos.length} photo${photos.length !== 1 ? 's' : ''}` },
+                        { label: 'Photos', value: `${existingPhotos.length + photos.length} photo${(existingPhotos.length + photos.length) !== 1 ? 's' : ''}` },
                         { label: 'Équipements', value: `${equipments.length} sélectionné${equipments.length !== 1 ? 's' : ''}` },
                       ].map(row => (
                         <div key={row.label} className="flex justify-between py-3 border-b border-slate-50 last:border-0 text-sm">
@@ -783,15 +872,21 @@ export default function NewPropertyPage() {
                         ))}
                       </ul>
                     </div>
+                    {existingAttestationUrl && !attestationFile && (
+                      <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                        <span className="text-sm text-green-700 font-medium">Document déjà fourni</span>
+                        <a href={existingAttestationUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4A6CF7] hover:underline">Voir ↗</a>
+                      </div>
+                    )}
                     <label className="block border-2 border-dashed border-slate-200 rounded-xl p-5 text-center cursor-pointer hover:border-[#0B1F4B] hover:bg-slate-50 transition-colors">
                       {attestationFile ? (
                         <div className="flex items-center justify-between px-2">
                           <span className="text-sm text-slate-700 font-medium truncate">{attestationFile.name}</span>
-                          <span className="text-xs text-green-600 font-medium ml-2 flex-shrink-0">✓ Ajouté</span>
+                          <span className="text-xs text-green-600 font-medium ml-2 flex-shrink-0">✓ Nouveau</span>
                         </div>
                       ) : (
                         <div>
-                          <p className="text-sm font-medium text-slate-600">Cliquez pour ajouter le document</p>
+                          <p className="text-sm font-medium text-slate-600">{existingAttestationUrl ? 'Remplacer le document' : 'Cliquez pour ajouter le document'}</p>
                           <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG</p>
                         </div>
                       )}
@@ -800,29 +895,19 @@ export default function NewPropertyPage() {
                     </label>
                   </div>
 
-                  {/* CGU + publish */}
-                  <div className="bg-[#0B1F4B]/5 border border-[#0B1F4B]/10 rounded-2xl p-5 space-y-4">
-                    <div>
-                      <p className="text-sm text-[#0B1F4B]/80 font-medium mb-1">Publier maintenant ou plus tard ?</p>
-                      <p className="text-xs text-slate-500">En brouillon, votre bien n'est pas visible. Vous pourrez le publier depuis le tableau de bord.</p>
-                    </div>
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" checked={cguAccepted} onChange={e => setCguAccepted(e.target.checked)}
-                        className="mt-0.5 accent-[#0B1F4B] w-4 h-4 flex-shrink-0" />
-                      <span className="text-xs text-slate-600 leading-relaxed">
-                        J'accepte les <Link href="/legal/cgu" target="_blank" className="text-[#4A6CF7] hover:underline">conditions générales d'utilisation</Link> d'Instant Rent. Je confirme être en droit de mettre ce logement en location. Je reconnais que les frais de 29 €/mois sont déductibles fiscalement comme frais de gestion.
-                      </span>
-                    </label>
+                  <div className="bg-[#0B1F4B]/5 border border-[#0B1F4B]/10 rounded-2xl p-5">
+                    <p className="text-sm text-[#0B1F4B]/80 font-medium mb-1">Statut actuel : {isPublished ? 'Publié' : 'Brouillon'}{propertyStatus === 'occupied' ? ' · Occupé' : ''}</p>
+                    <p className="text-xs text-slate-500">Vous pouvez enregistrer vos modifications sans changer le statut de publication, ou basculer la mise en ligne.</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={() => handleSubmit(false)} disabled={loading || !cguAccepted}
+                    <button type="button" onClick={() => handleSubmit(false)} disabled={loading}
                       className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">
-                      {loading && !uploadingPhotos ? 'Sauvegarde...' : 'Sauvegarder en brouillon'}
+                      {loading && !isPublished ? 'Sauvegarde...' : 'Enregistrer en brouillon'}
                     </button>
-                    <button type="button" onClick={() => handleSubmit(true)} disabled={loading || !cguAccepted}
+                    <button type="button" onClick={() => handleSubmit(true)} disabled={loading}
                       className="w-full bg-[#0B1F4B] text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] disabled:opacity-50 transition-colors">
-                      {loading ? (uploadingPhotos ? 'Upload photos...' : 'Publication...') : 'Publier maintenant'}
+                      {loading ? (uploadingPhotos ? 'Upload photos...' : 'Enregistrement...') : 'Enregistrer et publier'}
                     </button>
                   </div>
                 </>

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import TogglePublished from '@/components/TogglePublished'
+import DeleteProperty from '@/components/DeleteProperty'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -119,11 +120,22 @@ export default async function DashboardPage() {
                             <TogglePublished propertyId={property.id} initialValue={property.is_published ?? false} />
                           </div>
                         )}
-                        <Link
-                          href={`/dashboard/properties/${property.id}/applications`}
-                          className="text-xs text-[#4A6CF7] border border-[#4A6CF7]/20 bg-[#4A6CF7]/5 px-3 py-1.5 rounded-xl hover:bg-[#4A6CF7]/10 transition-colors font-medium">
-                          {property.applications?.[0]?.count ?? 0} dossier{(property.applications?.[0]?.count ?? 0) > 1 ? 's' : ''}
-                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          <Link
+                            href={`/dashboard/properties/${property.id}/edit`}
+                            className="text-xs text-slate-600 border border-slate-200 bg-white px-3 py-1.5 rounded-xl hover:bg-slate-50 transition-colors font-medium">
+                            Modifier
+                          </Link>
+                          <DeleteProperty
+                            propertyId={property.id}
+                            propertyTitle={property.title || property.address}
+                            isOccupied={property.status === 'occupied'} />
+                          <Link
+                            href={`/dashboard/properties/${property.id}/applications`}
+                            className="text-xs text-[#4A6CF7] border border-[#4A6CF7]/20 bg-[#4A6CF7]/5 px-3 py-1.5 rounded-xl hover:bg-[#4A6CF7]/10 transition-colors font-medium">
+                            {property.applications?.[0]?.count ?? 0} dossier{(property.applications?.[0]?.count ?? 0) > 1 ? 's' : ''}
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>

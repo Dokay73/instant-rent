@@ -354,9 +354,9 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col gap-3">
                 <p className="text-white/70 font-medium text-xs uppercase tracking-widest">Légal</p>
-                <span className="hover:text-white cursor-pointer transition-colors">Mentions légales</span>
-                <span className="hover:text-white cursor-pointer transition-colors">CGU</span>
-                <span className="hover:text-white cursor-pointer transition-colors">Confidentialité</span>
+                <Link href="/legal/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
+                <Link href="/legal/cgu" className="hover:text-white transition-colors">CGU</Link>
+                <Link href="/legal/confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
               </div>
             </div>
           </div>
