@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import FavoriteButton from '@/components/FavoriteButton'
+import ContactButton from '@/components/ContactButton'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -213,8 +214,9 @@ export default async function PropertyPage({
 
               <p className="text-center text-xs text-slate-400 mt-3">Bail Code Civil · Réponse sous 24h</p>
 
-              <div className="mt-3">
+              <div className="mt-3 space-y-2">
                 <FavoriteButton propertyId={property.id} />
+                <ContactButton propertyId={property.id} ownerId={property.owner_id} />
               </div>
             </div>
 
