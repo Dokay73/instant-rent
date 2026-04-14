@@ -45,11 +45,13 @@ export default function ConversationPage() {
         .eq('id', convId)
         .single()
 
-      if (!c || (c.owner?.id !== uid && c.tenant?.id !== uid)) {
+      const owner = Array.isArray(c?.owner) ? c.owner[0] : c?.owner
+      const tenant = Array.isArray(c?.tenant) ? c.tenant[0] : c?.tenant
+      if (!c || (owner?.id !== uid && tenant?.id !== uid)) {
         router.push('/messages'); return
       }
 
-      setConv(c)
+      setConv({ ...c, owner, tenant })
 
       const { data: msgs } = await supabase
         .from('messages')

@@ -7,6 +7,7 @@ export default async function MessagesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const userId = user.id
 
   const { data: conversations } = await supabase
     .from('conversations')
@@ -17,7 +18,7 @@ export default async function MessagesPage() {
       tenant:profiles!conversations_tenant_id_fkey(id, full_name),
       messages(content, created_at, sender_id, read_at)
     `)
-    .or(`owner_id.eq.${user.id},tenant_id.eq.${user.id}`)
+    .or(`owner_id.eq.${userId},tenant_id.eq.${userId}`)
     .order('created_at', { referencedTable: 'messages', ascending: false })
 
   const sorted = (conversations ?? []).sort((a: any, b: any) => {
@@ -27,7 +28,9 @@ export default async function MessagesPage() {
   })
 
   function getOther(conv: any) {
-    return conv.owner?.id === user.id ? conv.tenant : conv.owner
+    const owner = Array.isArray(conv.owner) ? conv.owner[0] : conv.owner
+    const tenant = Array.isArray(conv.tenant) ? conv.tenant[0] : conv.tenant
+    return owner?.id === userId ? tenant : owner
   }
 
   function getLastMessage(conv: any) {
@@ -39,7 +42,7 @@ export default async function MessagesPage() {
 
   function getUnreadCount(conv: any) {
     return (conv.messages ?? []).filter(
-      (m: any) => m.sender_id !== user.id && !m.read_at
+      (m: any) => m.sender_id !== userId && !m.read_at
     ).length
   }
 
