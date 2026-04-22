@@ -37,6 +37,12 @@ export default function ApplicationActions({
       .update({ status: 'rejected' })
       .eq('id', applicationId)
 
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'application_response', applicationId, accepted: false }),
+    }).catch(() => {})
+
     router.refresh()
     setLoading(null)
   }

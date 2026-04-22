@@ -72,19 +72,28 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
       docsUrls[doc.key] = publicUrl
     }
 
-    const { error: appError } = await supabase.from('applications').insert({
+    const { data: newApp, error: appError } = await supabase.from('applications').insert({
       property_id: id,
       tenant_id: user.id,
       duration_selected: duration,
       message,
       docs_urls: docsUrls,
       status: 'pending',
-    })
+    }).select('id').single()
 
     if (appError) {
       setError("Erreur lors de l'envoi de la candidature")
       setUploading(false)
       return
+    }
+
+    // Notifier le propriétaire
+    if (newApp?.id) {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'new_application', applicationId: newApp.id }),
+      }).catch(() => {})
     }
 
     router.push(`/properties/${id}/apply/success`)

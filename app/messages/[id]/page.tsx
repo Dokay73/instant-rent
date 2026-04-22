@@ -102,13 +102,26 @@ export default function ConversationPage() {
     e.preventDefault()
     if (!text.trim() || !userId) return
     setSending(true)
+    const content = text.trim()
     await supabase.from('messages').insert({
       conversation_id: convId,
       sender_id: userId,
-      content: text.trim(),
+      content,
     })
     setText('')
     setSending(false)
+
+    // Notifier le destinataire par email (fire & forget)
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'new_message',
+        conversationId: convId,
+        senderId: userId,
+        messagePreview: content,
+      }),
+    }).catch(() => {})
   }
 
   function formatTime(iso: string) {

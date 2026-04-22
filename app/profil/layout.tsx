@@ -9,6 +9,7 @@ const MENU = [
   { label: 'Mot de passe', href: '/profil/mot-de-passe', icon: '◈' },
   { label: 'Notifications', href: '/profil/notifications', icon: '◎' },
   { label: 'Vérification', href: '/profil/verification', icon: '◇' },
+  { label: 'Supprimer mon compte', href: '/profil/supprimer-compte', icon: '✕' },
 ]
 
 export default function ProfilLayout({ children }: { children: React.ReactNode }) {
