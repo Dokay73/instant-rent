@@ -28,7 +28,7 @@ export default async function ApplicationsPage({
 
   const { data: applications } = await supabase
     .from('applications')
-    .select('*, profiles(full_name), contracts(pdf_url)')
+    .select('*, profiles(full_name), contracts(pdf_url, signature_status)')
     .eq('property_id', id)
     .order('created_at', { ascending: false })
 
@@ -133,6 +133,7 @@ export default async function ApplicationsPage({
                       <GenerateBailButton
                         applicationId={app.id}
                         existingUrl={app.contracts?.[0]?.pdf_url}
+                        signatureStatus={app.contracts?.[0]?.signature_status}
                       />
                       <CancelBailButton
                         applicationId={app.id}

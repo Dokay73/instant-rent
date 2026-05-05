@@ -5,15 +5,20 @@ import { useState } from 'react'
 export default function GenerateBailButton({
   applicationId,
   existingUrl,
+  signatureStatus,
 }: {
   applicationId: string
   existingUrl?: string
+  signatureStatus?: string | null
 }) {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<'pdf' | 'sign' | null>(null)
   const [url, setUrl] = useState(existingUrl)
+  const [status, setStatus] = useState(signatureStatus ?? null)
+  const [error, setError] = useState('')
 
   async function handleGenerate() {
-    setLoading(true)
+    setLoading('pdf')
+    setError('')
     const res = await fetch('/api/generate-bail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -21,29 +26,72 @@ export default function GenerateBailButton({
     })
     const { url: pdfUrl } = await res.json()
     setUrl(pdfUrl)
-    setLoading(false)
+    setLoading(null)
   }
 
-  if (url) {
+  async function handleSendForSignature() {
+    setLoading('sign')
+    setError('')
+    const res = await fetch('/api/sign-bail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId }),
+    })
+    const data = await res.json()
+    if (data.error) {
+      setError(data.error)
+    } else {
+      setStatus('pending')
+    }
+    setLoading(null)
+  }
+
+  if (status === 'signed') {
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        Télécharger le bail PDF
-      </a>
+      <div className="flex flex-col gap-1.5">
+        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-medium w-fit">
+          ✓ Bail signé par les deux parties
+        </span>
+        {url && (
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-[#4A6CF7] hover:underline">
+            Télécharger le bail signé →
+          </a>
+        )}
+      </div>
+    )
+  }
+
+  if (status === 'pending') {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-medium w-fit">
+          ⏳ Signature en attente
+        </span>
+        <span className="text-xs text-slate-400">Les deux parties ont reçu un email de signature</span>
+      </div>
     )
   }
 
   return (
-    <button
-      onClick={handleGenerate}
-      disabled={loading}
-      className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-    >
-      {loading ? 'Génération...' : 'Générer le bail PDF'}
-    </button>
+    <div className="flex flex-col gap-2 items-start">
+      <div className="flex gap-2">
+        <button onClick={handleGenerate} disabled={loading !== null}
+          className="text-sm bg-white border border-slate-200 text-slate-700 px-4 py-1.5 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors">
+          {loading === 'pdf' ? 'Génération...' : url ? 'Voir le PDF' : 'Aperçu PDF'}
+        </button>
+        <button onClick={handleSendForSignature} disabled={loading !== null}
+          className="text-sm bg-[#0B1F4B] text-white px-4 py-1.5 rounded-lg hover:bg-[#142d6b] disabled:opacity-50 transition-colors">
+          {loading === 'sign' ? 'Envoi...' : 'Envoyer pour signature'}
+        </button>
+      </div>
+      {url && !loading && (
+        <a href={url} target="_blank" rel="noopener noreferrer"
+          className="text-xs text-[#4A6CF7] hover:underline">
+          Ouvrir l'aperçu du bail
+        </a>
+      )}
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
   )
 }
