@@ -1,7 +1,12 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'Instant Rent <noreply@instant-rent.fr>'
+
+function getResend() {
+  const key = process.env.RESEND_API_KEY
+  if (!key) return null
+  return new Resend(key)
+}
 
 export async function sendNewApplicationEmail({
   ownerEmail,
@@ -18,7 +23,7 @@ export async function sendNewApplicationEmail({
   propertyAddress: string
   applicationId: string
 }) {
-  await resend.emails.send({
+  const resend = getResend(); if (!resend) return; await resend.emails.send({
     from: FROM,
     to: ownerEmail,
     subject: `Nouvelle candidature pour "${propertyTitle}"`,
@@ -56,7 +61,7 @@ export async function sendApplicationResponseEmail({
   propertyTitle: string
   accepted: boolean
 }) {
-  await resend.emails.send({
+  const resend = getResend(); if (!resend) return; await resend.emails.send({
     from: FROM,
     to: tenantEmail,
     subject: accepted
@@ -110,7 +115,7 @@ export async function sendNewMessageEmail({
   messagePreview: string
   conversationId: string
 }) {
-  await resend.emails.send({
+  const resend = getResend(); if (!resend) return; await resend.emails.send({
     from: FROM,
     to: recipientEmail,
     subject: `Nouveau message de ${senderName}`,
