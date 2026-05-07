@@ -16,14 +16,15 @@ export default function SupprimerComptePage() {
     setLoading(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    const res = await fetch('/api/delete-account', { method: 'POST' })
+    const data = await res.json()
 
-    // Supprimer les données profil (cascade supprime favoris, conversations, etc.)
-    await supabase.from('profiles').delete().eq('id', user.id)
+    if (!res.ok) {
+      setError(data.error || 'Erreur lors de la suppression')
+      setLoading(false)
+      return
+    }
 
-    // Déconnexion — la suppression du compte auth.users nécessite le service role (côté serveur)
-    // On déconnecte et on redirige, l'account sera désactivé
     await supabase.auth.signOut()
     router.push('/?compte=supprime')
   }

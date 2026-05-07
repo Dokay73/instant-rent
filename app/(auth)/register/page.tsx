@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [cguAccepted, setCguAccepted] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -16,10 +17,18 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.SyntheticEvent) {
     e.preventDefault()
+    if (!cguAccepted) {
+      setError('Vous devez accepter les conditions générales pour créer un compte.')
+      return
+    }
+    if (password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères.')
+      return
+    }
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -31,6 +40,12 @@ export default function RegisterPage() {
       setError(error.message)
       setLoading(false)
       return
+    }
+
+    if (signUpData.user) {
+      await supabase.from('profiles').update({
+        cgu_accepted_at: new Date().toISOString(),
+      }).eq('id', signUpData.user.id)
     }
 
     router.push('/dashboard')
@@ -123,6 +138,18 @@ export default function RegisterPage() {
               />
             </div>
 
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input type="checkbox" checked={cguAccepted} onChange={e => setCguAccepted(e.target.checked)}
+                className="mt-0.5 accent-[#0B1F4B] w-4 h-4 flex-shrink-0" />
+              <span className="text-xs text-slate-600 leading-relaxed">
+                J'accepte les{' '}
+                <Link href="/legal/cgu" target="_blank" className="text-[#4A6CF7] hover:underline">conditions générales d'utilisation</Link>
+                {' '}et la{' '}
+                <Link href="/legal/confidentialite" target="_blank" className="text-[#4A6CF7] hover:underline">politique de confidentialité</Link>
+                {' '}d'Instant Rent.
+              </span>
+            </label>
+
             {error && (
               <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
                 {error}
@@ -131,7 +158,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !cguAccepted}
               className="w-full bg-[#0B1F4B] text-white py-3 rounded-xl text-sm font-semibold hover:bg-[#142d6b] disabled:opacity-50 transition-colors mt-2"
             >
               {loading ? 'Création...' : 'Créer mon compte'}

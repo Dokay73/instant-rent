@@ -49,7 +49,11 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
     setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return router.push('/login')
+    if (!user) {
+      setUploading(false)
+      router.push('/login')
+      return
+    }
 
     const docsUrls: Record<string, string> = {}
 
