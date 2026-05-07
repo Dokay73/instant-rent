@@ -360,6 +360,11 @@ export default function HomePage() {
                 <Link href="/dashboard" className="hover:text-white transition-colors">Mon espace</Link>
               </div>
               <div className="flex flex-col gap-3">
+                <p className="text-white/70 font-medium text-xs uppercase tracking-widest">Communauté</p>
+                <a href="https://discord.gg/BR8UsZJYJ" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Rejoindre Discord</a>
+                <a href="mailto:hakangdz@outlook.fr" className="hover:text-white transition-colors">Nous contacter</a>
+              </div>
+              <div className="flex flex-col gap-3">
                 <p className="text-white/70 font-medium text-xs uppercase tracking-widest">Légal</p>
                 <Link href="/legal/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
                 <Link href="/legal/cgu" className="hover:text-white transition-colors">CGU</Link>

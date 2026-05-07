@@ -38,6 +38,7 @@ export default async function DashboardPage() {
     { done: emailVerified, label: 'Vérifier mon email', href: '/profil/verification', desc: 'Confirmation par lien' },
     { done: idVerified, label: 'Déposer ma pièce d\'identité', href: '/profil/verification', desc: 'Optionnel mais recommandé' },
     { done: hasProperty, label: 'Publier mon premier bien', href: '/dashboard/properties/new', desc: 'En 7 étapes guidées' },
+    { done: false, label: 'Rejoindre la communauté Discord', href: 'https://discord.gg/BR8UsZJYJ', desc: 'Échanger avec les autres beta testeurs', external: true },
   ]
   const onboardingComplete = onboardingSteps.every(s => s.done)
   const completedCount = onboardingSteps.filter(s => s.done).length
