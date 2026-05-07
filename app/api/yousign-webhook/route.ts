@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       const docs = await docsRes.json()
       const docId = docs?.[0]?.id
 
-      let signedPdfUrl: string | null = null
+      let signedPdfPath: string | null = null
 
       if (docId) {
         const fileRes = await fetch(`${YOUSIGN_API_URL}/signature_requests/${procedureId}/documents/${docId}/download`, {
@@ -66,8 +66,7 @@ export async function POST(req: NextRequest) {
             contentType: 'application/pdf',
             upsert: true,
           })
-          const { data: { publicUrl } } = supabaseAdmin.storage.from('documents').getPublicUrl(path)
-          signedPdfUrl = publicUrl
+          signedPdfPath = path
         }
       }
 
@@ -76,7 +75,7 @@ export async function POST(req: NextRequest) {
         .update({
           signature_status: 'signed',
           signed_at: new Date().toISOString(),
-          ...(signedPdfUrl ? { pdf_url: signedPdfUrl } : {}),
+          ...(signedPdfPath ? { pdf_url: signedPdfPath } : {}),
         })
         .eq('yousign_procedure_id', procedureId)
     }

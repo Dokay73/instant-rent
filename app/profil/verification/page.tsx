@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import DocLink from '@/components/DocLink'
 
 export default function VerificationPage() {
   const supabase = createClient()
@@ -40,9 +41,8 @@ export default function VerificationPage() {
     const path = `${userId}/id-card.${ext}`
     const { error } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
     if (!error) {
-      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-      await supabase.from('profiles').update({ id_card_url: publicUrl }).eq('id', userId)
-      setIdCardUrl(publicUrl)
+      await supabase.from('profiles').update({ id_card_url: path }).eq('id', userId)
+      setIdCardUrl(path)
       setIdUploaded(true)
     }
     setUploadingId(false)
@@ -141,10 +141,9 @@ export default function VerificationPage() {
         {idCardUrl && !idUploaded ? (
           <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-4 py-3 mb-3">
             <span className="text-sm text-green-700 font-medium">Document déposé</span>
-            <a href={idCardUrl} target="_blank" rel="noopener noreferrer"
-              className="text-xs text-[#4A6CF7] hover:underline">
+            <DocLink path={idCardUrl} className="text-xs text-[#4A6CF7] hover:underline">
               Voir ↗
-            </a>
+            </DocLink>
           </div>
         ) : idUploaded ? (
           <div className="flex items-center gap-2 text-sm text-green-600 font-medium mb-3">

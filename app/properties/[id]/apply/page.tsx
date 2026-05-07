@@ -72,8 +72,8 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
         return
       }
 
-      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-      docsUrls[doc.key] = publicUrl
+      // Stockage du path uniquement — accès via /api/get-doc avec signed URL
+      docsUrls[doc.key] = path
     }
 
     const { data: newApp, error: appError } = await supabase.from('applications').insert({

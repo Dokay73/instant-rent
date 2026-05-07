@@ -87,15 +87,16 @@ export async function POST(req: NextRequest) {
       upsert: true,
     })
 
-  const { data: { publicUrl } } = supabaseAdmin.storage
-    .from('documents')
-    .getPublicUrl(fileName)
-
-  // Sauvegarder l'URL dans contracts
+  // Sauvegarder le path dans contracts (signed URL générée à la lecture)
   await supabaseAdmin
     .from('contracts')
-    .update({ pdf_url: publicUrl })
+    .update({ pdf_url: fileName })
     .eq('application_id', applicationId)
 
-  return NextResponse.json({ url: publicUrl })
+  // Renvoyer une signed URL valide 1h pour téléchargement immédiat
+  const { data: signed } = await supabaseAdmin.storage
+    .from('documents')
+    .createSignedUrl(fileName, 3600)
+
+  return NextResponse.json({ url: signed?.signedUrl ?? null, path: fileName })
 }

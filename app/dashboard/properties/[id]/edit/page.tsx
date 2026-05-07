@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import DocLink from '@/components/DocLink'
 
 const STEPS = ['Localisation', 'Description', 'Équipements', 'Finances', 'Durées', 'Photos', 'Publication']
 
@@ -220,8 +221,7 @@ export default function EditPropertyPage() {
       const path = `${user.id}/attestation-${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage.from('documents').upload(path, attestationFile, { upsert: true })
       if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-        attestationUrl = publicUrl
+        attestationUrl = path
       }
     }
 
@@ -875,7 +875,7 @@ export default function EditPropertyPage() {
                     {existingAttestationUrl && !attestationFile && (
                       <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-4 py-3">
                         <span className="text-sm text-green-700 font-medium">Document déjà fourni</span>
-                        <a href={existingAttestationUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4A6CF7] hover:underline">Voir ↗</a>
+                        <DocLink path={existingAttestationUrl} className="text-xs text-[#4A6CF7] hover:underline">Voir ↗</DocLink>
                       </div>
                     )}
                     <label className="block border-2 border-dashed border-slate-200 rounded-xl p-5 text-center cursor-pointer hover:border-[#0B1F4B] hover:bg-slate-50 transition-colors">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import DocLink from '@/components/DocLink'
 
 export default function GenerateBailButton({
   applicationId,
@@ -53,10 +54,10 @@ export default function GenerateBailButton({
           ✓ Bail signé par les deux parties
         </span>
         {url && (
-          <a href={url} target="_blank" rel="noopener noreferrer"
+          <DocLink path={url} applicationId={applicationId}
             className="text-xs text-[#4A6CF7] hover:underline">
             Télécharger le bail signé →
-          </a>
+          </DocLink>
         )}
       </div>
     )
@@ -86,10 +87,10 @@ export default function GenerateBailButton({
         </button>
       </div>
       {url && !loading && (
-        <a href={url} target="_blank" rel="noopener noreferrer"
+        <DocLink path={url} applicationId={applicationId}
           className="text-xs text-[#4A6CF7] hover:underline">
           Ouvrir l'aperçu du bail
-        </a>
+        </DocLink>
       )}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>

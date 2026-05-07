@@ -159,15 +159,14 @@ export default function NewPropertyPage() {
       setUploadingPhotos(false)
     }
 
-    // Upload attestation
+    // Upload attestation — on stocke uniquement le path (bucket privé)
     let attestationUrl = ''
     if (attestationFile) {
       const ext = attestationFile.name.split('.').pop()
       const path = `${user.id}/attestation-${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage.from('documents').upload(path, attestationFile, { upsert: true })
       if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path)
-        attestationUrl = publicUrl
+        attestationUrl = path
       }
     }
 

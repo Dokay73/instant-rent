@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import ApplicationActions from './ApplicationActions'
 import GenerateBailButton from './GenerateBailButton'
+import DocLink from '@/components/DocLink'
 import CancelBailButton from './CancelBailButton'
 
 export default async function ApplicationsPage({
@@ -105,15 +106,14 @@ export default async function ApplicationsPage({
                   <div className="mt-4 flex flex-wrap gap-2">
                     {docList.map(doc => (
                       docs?.[doc.key] ? (
-                        <a
+                        <DocLink
                           key={doc.key}
-                          href={docs[doc.key]}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          path={docs[doc.key]}
+                          applicationId={app.id}
                           className="text-xs bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-medium"
                         >
                           {doc.label} ↗
-                        </a>
+                        </DocLink>
                       ) : (
                         <span key={doc.key} className="text-xs bg-red-50 border border-red-100 text-red-500 px-3 py-1.5 rounded-lg">
                           {doc.label} manquant
