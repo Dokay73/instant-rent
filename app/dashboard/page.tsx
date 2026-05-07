@@ -29,6 +29,19 @@ export default async function DashboardPage() {
   const published = properties?.filter(p => p.is_published).length ?? 0
   const totalApplications = properties?.reduce((acc, p) => acc + (p.applications?.[0]?.count ?? 0), 0) ?? 0
 
+  const profileComplete = !!(profile?.full_name && profile?.phone)
+  const emailVerified = !!user.email_confirmed_at
+  const idVerified = !!profile?.id_card_url
+  const hasProperty = (properties?.length ?? 0) > 0
+  const onboardingSteps = [
+    { done: profileComplete, label: 'Compléter mon profil', href: '/profil', desc: 'Nom complet, téléphone' },
+    { done: emailVerified, label: 'Vérifier mon email', href: '/profil/verification', desc: 'Confirmation par lien' },
+    { done: idVerified, label: 'Déposer ma pièce d\'identité', href: '/profil/verification', desc: 'Optionnel mais recommandé' },
+    { done: hasProperty, label: 'Publier mon premier bien', href: '/dashboard/properties/new', desc: 'En 7 étapes guidées' },
+  ]
+  const onboardingComplete = onboardingSteps.every(s => s.done)
+  const completedCount = onboardingSteps.filter(s => s.done).length
+
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : '?'
@@ -53,6 +66,53 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Onboarding */}
+        {!onboardingComplete && (
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-xs text-[#4A6CF7] font-semibold uppercase tracking-wide mb-1">Bienvenue sur Instant Rent</p>
+                <h2 className="text-base font-bold text-slate-900">Pour bien démarrer</h2>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-500 font-medium">{completedCount}/{onboardingSteps.length}</span>
+                <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#0B1F4B] rounded-full transition-all"
+                    style={{ width: `${(completedCount / onboardingSteps.length) * 100}%` }} />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {onboardingSteps.map(step => (
+                <Link key={step.label} href={step.href}
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
+                    step.done
+                      ? 'border-green-100 bg-green-50/30'
+                      : 'border-slate-100 hover:border-[#0B1F4B] hover:bg-slate-50'
+                  }`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    step.done ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    {step.done ? (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    ) : (
+                      <span className="text-xs font-bold">→</span>
+                    )}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${step.done ? 'text-slate-500' : 'text-slate-900'}`}>
+                      {step.label}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">{step.desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
