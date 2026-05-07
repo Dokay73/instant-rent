@@ -25,6 +25,13 @@ export default async function PropertyPage({
 
   if (!property) notFound()
 
+  // Bien visible uniquement s'il est publié et vacant (sauf pour le propriétaire)
+  const { data: { user } } = await supabase.auth.getUser()
+  const isOwner = user?.id === property.owner_id
+  if (!isOwner && (!property.is_published || property.status !== 'vacant')) {
+    notFound()
+  }
+
   const totalRent = property.rent_hc + property.charges
 
   return (

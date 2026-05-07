@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
@@ -11,7 +12,33 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
     const { applicationId, propertyId } = await req.json()
+
+    // Vérifier que l'utilisateur est bien le propriétaire du bien
+    const { data: property } = await supabaseAdmin
+      .from('properties')
+      .select('id, owner_id')
+      .eq('id', propertyId)
+      .single()
+
+    if (!property || property.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    }
+
+    // Vérifier que la candidature appartient à ce bien
+    const { data: application } = await supabaseAdmin
+      .from('applications')
+      .select('id, property_id')
+      .eq('id', applicationId)
+      .single()
+
+    if (!application || application.property_id !== propertyId) {
+      return NextResponse.json({ error: 'Candidature invalide' }, { status: 400 })
+    }
 
     // Récupérer l'abonnement Stripe actif
     const { data: subscription } = await supabaseAdmin

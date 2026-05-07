@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import BailTemplate from '@/lib/pdf/BailTemplate'
 import { createElement } from 'react'
 
@@ -38,6 +39,10 @@ function splitName(full: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
     const { applicationId } = await req.json()
 
     const { data: application } = await supabaseAdmin
@@ -51,6 +56,11 @@ export async function POST(req: NextRequest) {
     }
 
     const property = application.properties
+
+    // Seul le propriétaire peut envoyer le bail en signature
+    if (property.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    }
     const { data: ownerAuth } = await supabaseAdmin.auth.admin.getUserById(property.owner_id)
     const { data: tenantAuth } = await supabaseAdmin.auth.admin.getUserById(application.tenant_id)
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,10 +9,28 @@ const supabaseAdmin = createClient(
 
 const YOUSIGN_API_URL = process.env.YOUSIGN_API_URL!
 const YOUSIGN_API_KEY = process.env.YOUSIGN_API_KEY!
+const YOUSIGN_WEBHOOK_SECRET = process.env.YOUSIGN_WEBHOOK_SECRET
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const rawBody = await req.text()
+
+    // Vérification de la signature du webhook (en prod uniquement)
+    if (YOUSIGN_WEBHOOK_SECRET) {
+      const signature = req.headers.get('x-yousign-signature-256')
+      if (!signature) {
+        return NextResponse.json({ error: 'Signature manquante' }, { status: 401 })
+      }
+      const expected = crypto
+        .createHmac('sha256', YOUSIGN_WEBHOOK_SECRET)
+        .update(rawBody)
+        .digest('hex')
+      if (signature !== `sha256=${expected}` && signature !== expected) {
+        return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
+      }
+    }
+
+    const body = JSON.parse(rawBody)
     const eventType = body.event_name || body.event_type
     const procedureId = body.data?.signature_request?.id
 

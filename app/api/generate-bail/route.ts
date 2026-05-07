@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import BailTemplate from '@/lib/pdf/BailTemplate'
 import { createElement } from 'react'
 
@@ -20,6 +21,10 @@ function formatDate(date: Date): string {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
   const { applicationId } = await req.json()
 
   // Récupérer toutes les données nécessaires
@@ -40,6 +45,11 @@ export async function POST(req: NextRequest) {
   const property = application.properties
   const landlordProfile = property.profiles
   const tenantProfile = application.profiles
+
+  // Vérifier que l'user est soit le propriétaire soit le locataire
+  if (property.owner_id !== user.id && application.tenant_id !== user.id) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+  }
 
   const startDate = new Date()
   const endDate = addMonths(startDate, application.duration_selected)

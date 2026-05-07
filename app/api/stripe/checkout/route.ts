@@ -14,9 +14,23 @@ export async function POST(req: NextRequest) {
 
   const { data: property } = await supabase
     .from('properties')
-    .select('address, city')
+    .select('id, owner_id, address, city')
     .eq('id', propertyId)
     .single()
+
+  if (!property || property.owner_id !== user.id) {
+    return NextResponse.json({ error: 'Propriété introuvable ou non autorisée' }, { status: 403 })
+  }
+
+  const { data: application } = await supabase
+    .from('applications')
+    .select('id, property_id, status')
+    .eq('id', applicationId)
+    .single()
+
+  if (!application || application.property_id !== propertyId || application.status !== 'pending') {
+    return NextResponse.json({ error: 'Candidature invalide' }, { status: 400 })
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',

@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import {
   sendNewApplicationEmail,
   sendApplicationResponseEmail,
   sendNewMessageEmail,
 } from '@/lib/email'
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
   const body = await req.json()
   const { type } = body
 
@@ -41,7 +45,7 @@ export async function POST(req: NextRequest) {
           tenantName: tenant?.full_name ?? 'Un candidat',
           propertyTitle: property.title,
           propertyAddress: property.address,
-          applicationId: app.property_id,
+          propertyId: app.property_id,
         })
       }
     }
