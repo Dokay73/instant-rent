@@ -53,7 +53,7 @@ export default function ProfilLayout({ children }: { children: React.ReactNode }
                 Notre équipe répond sous 24h.
               </p>
               <a
-                href="mailto:contact@instantrent.fr"
+                href="mailto:hakangdz@outlook.fr"
                 className="mt-3 block text-xs text-[#4A6CF7] hover:underline"
               >
                 Nous contacter →

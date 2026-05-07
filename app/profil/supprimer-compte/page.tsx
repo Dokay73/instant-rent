@@ -80,8 +80,8 @@ export default function SupprimerComptePage() {
 
       <p className="text-xs text-slate-400 text-center">
         Si vous avez un abonnement Stripe actif, contactez-nous à{' '}
-        <a href="mailto:contact@instantrent.fr" className="text-[#4A6CF7] hover:underline">
-          contact@instantrent.fr
+        <a href="mailto:hakangdz@outlook.fr" className="text-[#4A6CF7] hover:underline">
+          hakangdz@outlook.fr
         </a>{' '}
         pour en assurer la résiliation.
       </p>
