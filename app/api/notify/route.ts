@@ -4,6 +4,7 @@ import {
   sendNewApplicationEmail,
   sendApplicationResponseEmail,
   sendNewMessageEmail,
+  sendWaitlistWelcomeEmail,
 } from '@/lib/email'
 
 const supabase = createClient(
@@ -115,6 +116,13 @@ export async function POST(req: NextRequest) {
           messagePreview: messagePreview.slice(0, 200),
           conversationId,
         })
+      }
+    }
+
+    if (type === 'waitlist_welcome') {
+      const { email, fullName } = body
+      if (email && fullName) {
+        await sendWaitlistWelcomeEmail({ email, fullName })
       }
     }
 

@@ -39,6 +39,16 @@ export default function EarlyAccessPage() {
       return
     }
 
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'waitlist_welcome',
+        email: email.trim().toLowerCase(),
+        fullName: fullName.trim(),
+      }),
+    }).catch(() => {})
+
     setSuccess(true)
     setLoading(false)
   }
@@ -53,8 +63,15 @@ export default function EarlyAccessPage() {
             </svg>
           </div>
           <h1 className="text-xl font-bold text-slate-900 mb-2">Inscription confirmée</h1>
-          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          <p className="text-sm text-slate-500 mb-5 leading-relaxed">
             Vous êtes sur la liste d'attente Instant Rent. Nous vous contactons dès l'ouverture en avant-première pour publier votre bien.
+          </p>
+          <a href="https://discord.gg/BR8UsZJYJ" target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#5865F2] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#4752c4] transition-colors mb-3">
+            Rejoindre le Discord beta
+          </a>
+          <p className="text-xs text-slate-400 mb-5">
+            Discutez avec les autres propriétaires et suivez en avant-première les nouveautés.
           </p>
           <Link href="/" className="text-sm text-[#4A6CF7] hover:underline">
             Retour à l'accueil

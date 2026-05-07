@@ -109,6 +109,48 @@ export async function sendApplicationResponseEmail({
   })
 }
 
+export async function sendWaitlistWelcomeEmail({
+  email,
+  fullName,
+}: {
+  email: string
+  fullName: string
+}) {
+  const resend = getResend(); if (!resend) return; await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'Bienvenue sur la liste d\'attente Instant Rent',
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+        <div style="background: #0B1F4B; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+          <h1 style="color: white; font-size: 20px; margin: 0;">Instant<span style="color: #4A6CF7;"> Rent</span></h1>
+        </div>
+        <p style="color: #475569; font-size: 15px;">Bonjour ${esc(fullName)},</p>
+        <p style="color: #475569; font-size: 15px;">
+          Merci pour votre inscription à la <strong>liste d'attente Instant Rent</strong>. Vous faites désormais partie des premiers propriétaires à qui nous ouvrirons l'accès à la plateforme.
+        </p>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 8px; font-weight: 600; color: #0f172a;">Que se passe-t-il maintenant ?</p>
+          <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+            Nous vous contactons personnellement pour vous accompagner dans la publication de votre premier bien et bénéficier d'un accès anticipé à toutes les fonctionnalités.
+          </p>
+        </div>
+        <p style="color: #475569; font-size: 15px;">
+          En attendant, rejoignez notre <strong>communauté Discord beta</strong> pour échanger avec les autres propriétaires et suivre les nouveautés en avant-première :
+        </p>
+        <a href="https://discord.gg/BR8UsZJYJ"
+          style="display: inline-block; background: #5865F2; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Rejoindre le Discord →
+        </a>
+        <p style="color: #94a3b8; font-size: 12px; margin-top: 32px;">
+          À très bientôt,<br>
+          L'équipe Instant Rent
+        </p>
+      </div>
+    `,
+  })
+}
+
 export async function sendNewMessageEmail({
   recipientEmail,
   recipientName,
