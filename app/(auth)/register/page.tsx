@@ -43,9 +43,11 @@ export default function RegisterPage() {
     }
 
     if (signUpData.user) {
-      await supabase.from('profiles').update({
+      await supabase.from('profiles').upsert({
+        id: signUpData.user.id,
+        full_name: fullName,
         cgu_accepted_at: new Date().toISOString(),
-      }).eq('id', signUpData.user.id)
+      })
     }
 
     router.push('/dashboard')
