@@ -19,6 +19,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 4,
   },
+  subtitle: {
+    fontSize: 9,
+    textAlign: 'center',
+    color: '#555',
+    marginBottom: 4,
+  },
   separator: {
     borderBottomWidth: 1,
     borderBottomColor: '#cccccc',
@@ -63,45 +69,93 @@ const styles = StyleSheet.create({
     borderBottomColor: '#999',
     marginTop: 30,
   },
+  small: {
+    fontSize: 9,
+    color: '#555',
+  },
 })
 
 interface BailData {
-  // Bailleur
   landlordName: string
   landlordAddress: string
-  // Locataire
+  landlordBirthDate?: string | null
+  landlordType?: string
   tenantName: string
-  tenantBirthDate?: string
-  tenantBirthPlace?: string
-  tenantCurrentAddress?: string
-  // Bien
+  tenantBirthDate?: string | null
+  tenantCurrentAddress?: string | null
   propertyAddress: string
+  propertyType?: string | null
+  propertyDescription?: string
   propertySurface?: string
-  // Financier
+  propertyRooms?: number | null
+  propertyFurnished?: boolean
+  equipments?: string[]
+  petsAllowed?: boolean
+  smokingAllowed?: boolean
+  handicapAccessible?: boolean
+  rentHc?: number
+  chargesAmount?: number
   rentTotal: number
-  charges: number
-  deposit: number
+  chargesMode?: 'provisions' | 'forfait_sans' | 'forfait_avec' | string
   chargesIncluded: string[]
-  // Durée
+  prestations?: Record<string, 'inclus' | 'non_inclus' | 'non_applicable'> | null
+  deposit: number
+  depositPaymentMethods?: string[]
+  minIncome?: number | null
+  zoneTendue?: boolean | null
+  dpeClass?: string | null
+  dpeDate?: string | null
+  dpeEnergyValue?: number | null
+  dpeGesClass?: string | null
+  dpeGesValue?: number | null
   durationMonths: number
   startDate: string
   endDate: string
-  // Meta
   signatureCity: string
   signatureDate: string
   noticedays?: number
 }
 
+const CHARGES_MODE_LABELS: Record<string, string> = {
+  provisions: 'Provisions sur charges avec régularisation annuelle selon les charges réelles',
+  forfait_sans: 'Forfait fixe non révisé pendant toute la durée du bail',
+  forfait_avec: 'Forfait fixe avec révision annuelle',
+}
+
+const PRESTATION_LABELS: Record<string, string> = {
+  eau: 'Eau',
+  electricite: 'Électricité',
+  gaz: 'Gaz',
+  chauffage: 'Chauffage',
+  internet: 'Internet',
+  parking: 'Parking',
+}
+
 export default function BailTemplate({ data }: { data: BailData }) {
   const noticeDays = data.noticedays ?? 30
+  const isFurnished = data.propertyFurnished ?? true
+  const docType = isFurnished
+    ? 'Contrat de mise à disposition meublée à usage temporaire'
+    : 'Contrat de location à usage personnel temporaire'
+
+  const prestationsIncluded = data.prestations
+    ? Object.entries(data.prestations).filter(([, v]) => v === 'inclus').map(([k]) => PRESTATION_LABELS[k] || k)
+    : []
+  const prestationsNotIncluded = data.prestations
+    ? Object.entries(data.prestations).filter(([, v]) => v === 'non_inclus').map(([k]) => PRESTATION_LABELS[k] || k)
+    : []
+
+  const paymentMethodsText = data.depositPaymentMethods && data.depositPaymentMethods.length > 0
+    ? data.depositPaymentMethods.join(', ')
+    : 'Virement bancaire'
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
 
-        {/* TITRE */}
-        <Text style={styles.title}>
-          Contrat de mise à disposition meublée à usage temporaire / secondaire
+        <Text style={styles.title}>{docType}</Text>
+        <Text style={styles.subtitle}>
+          Régi par les articles 1708 et suivants du Code civil — Généré via Instant Rent
         </Text>
         <View style={styles.separator} />
 
@@ -110,15 +164,19 @@ export default function BailTemplate({ data }: { data: BailData }) {
 
         <Text style={[styles.text, styles.bold]}>Le Bailleur :</Text>
         <Text style={styles.text}>{data.landlordName}</Text>
+        {data.landlordBirthDate && (
+          <Text style={styles.text}>Né(e) le : {data.landlordBirthDate}</Text>
+        )}
         <Text style={styles.text}>Adresse : {data.landlordAddress}</Text>
+        {data.landlordType === 'professionnel' && (
+          <Text style={styles.text}>Statut : <Text style={styles.bold}>Bailleur professionnel</Text></Text>
+        )}
 
         <View style={{ marginTop: 8 }} />
         <Text style={[styles.text, styles.bold]}>Et le Locataire :</Text>
         <Text style={styles.text}>{data.tenantName}</Text>
-        {data.tenantBirthDate && data.tenantBirthPlace && (
-          <Text style={styles.text}>
-            Né(e) le : {data.tenantBirthDate} à {data.tenantBirthPlace}
-          </Text>
+        {data.tenantBirthDate && (
+          <Text style={styles.text}>Né(e) le : {data.tenantBirthDate}</Text>
         )}
         {data.tenantCurrentAddress && (
           <Text style={styles.text}>Adresse actuelle : {data.tenantCurrentAddress}</Text>
@@ -130,17 +188,23 @@ export default function BailTemplate({ data }: { data: BailData }) {
         <Text style={styles.sectionTitle}>Article 1 – Objet de la mise à disposition</Text>
         <Text style={styles.text}>
           Le Bailleur met à disposition du Locataire, à titre temporaire et exclusivement à usage
-          personnel <Text style={styles.bold}>non résidentiel</Text>, un logement meublé situé à
+          personnel <Text style={styles.bold}>non résidentiel</Text>, le logement {isFurnished ? 'meublé' : ''} situé à
           l'adresse suivante :
         </Text>
         <Text style={[styles.text, styles.bold]}>{data.propertyAddress}</Text>
-        {data.propertySurface && (
-          <Text style={styles.text}>Superficie : environ {data.propertySurface} m²</Text>
+        {data.propertyDescription && (
+          <Text style={styles.text}>Description : {data.propertyDescription}</Text>
         )}
-        <Text style={styles.text}>
-          Ce local est <Text style={styles.bold}>entièrement meublé et équipé</Text>, à usage de
-          séjour temporaire, sans vocation de résidence principale.
-        </Text>
+        {data.equipments && data.equipments.length > 0 && (
+          <>
+            <Text style={[styles.text, { marginTop: 4 }]}>Équipements à disposition :</Text>
+            <Text style={[styles.text, styles.bullet]}>• {data.equipments.join(' · ')}</Text>
+          </>
+        )}
+        <Text style={[styles.text, { marginTop: 4 }]}>Conditions d'accueil :</Text>
+        <Text style={[styles.text, styles.bullet]}>• Animaux : {data.petsAllowed ? 'autorisés' : 'non autorisés'}</Text>
+        <Text style={[styles.text, styles.bullet]}>• Fumeurs : {data.smokingAllowed ? 'autorisés' : 'non autorisés'}</Text>
+        <Text style={[styles.text, styles.bullet]}>• Accessibilité PMR : {data.handicapAccessible ? 'oui' : 'non'}</Text>
 
         <View style={styles.separator} />
 
@@ -157,8 +221,7 @@ export default function BailTemplate({ data }: { data: BailData }) {
         </Text>
         <Text style={styles.text}>
           Le Locataire s'engage à <Text style={styles.bold}>ne pas déclarer cette adresse comme
-          sa résidence principale</Text>, ni à l'utiliser pour recevoir du courrier administratif
-          ou fiscal.
+          sa résidence principale</Text>.
         </Text>
 
         <View style={styles.separator} />
@@ -167,28 +230,66 @@ export default function BailTemplate({ data }: { data: BailData }) {
         <Text style={styles.sectionTitle}>Article 3 – Durée de la location</Text>
         <Text style={styles.text}>La mise à disposition est consentie pour une durée ferme de :</Text>
         <Text style={[styles.text, styles.bold]}>
-          {data.durationMonths} MOIS, à compter du {data.startDate} jusqu'au {data.endDate}
+          {data.durationMonths} mois, à compter du {data.startDate} jusqu'au {data.endDate}
         </Text>
         <Text style={styles.text}>
           Ce contrat est <Text style={styles.bold}>non renouvelable automatiquement</Text>. Tout
-          renouvellement fera l'objet d'un nouvel accord écrit.
+          renouvellement fera l'objet d'un nouvel accord écrit entre les parties.
         </Text>
+        {data.zoneTendue !== null && data.zoneTendue !== undefined && (
+          <Text style={[styles.text, styles.small]}>
+            Zone tendue : {data.zoneTendue ? 'oui (encadrement des loyers applicable)' : 'non'}
+          </Text>
+        )}
 
         <View style={styles.separator} />
 
         {/* ARTICLE 4 */}
         <Text style={styles.sectionTitle}>Article 4 – Loyer et charges</Text>
         <Text style={styles.text}>
-          Le loyer mensuel est fixé à{' '}
-          <Text style={styles.bold}>{data.rentTotal} € charges comprises</Text>, incluant :
+          Le loyer mensuel est fixé à <Text style={styles.bold}>{data.rentTotal} € charges comprises</Text>
+          {typeof data.rentHc === 'number' && (
+            <Text> (loyer hors charges : {data.rentHc} € + charges : {data.chargesAmount ?? 0} €)</Text>
+          )}.
         </Text>
-        {data.chargesIncluded.map((charge, i) => (
-          <Text key={i} style={[styles.text, styles.bullet]}>• {charge}</Text>
-        ))}
-        <Text style={styles.text}>
+        {data.chargesMode && (
+          <Text style={styles.text}>
+            Modalité des charges : <Text style={styles.bold}>{CHARGES_MODE_LABELS[data.chargesMode] ?? data.chargesMode}</Text>
+          </Text>
+        )}
+        {prestationsIncluded.length > 0 && (
+          <>
+            <Text style={[styles.text, { marginTop: 4 }]}>Prestations incluses dans les charges :</Text>
+            {prestationsIncluded.map(p => (
+              <Text key={p} style={[styles.text, styles.bullet]}>• {p}</Text>
+            ))}
+          </>
+        )}
+        {prestationsNotIncluded.length > 0 && (
+          <>
+            <Text style={[styles.text, { marginTop: 4 }]}>Prestations à la charge du Locataire :</Text>
+            {prestationsNotIncluded.map(p => (
+              <Text key={p} style={[styles.text, styles.bullet]}>• {p}</Text>
+            ))}
+          </>
+        )}
+        {data.chargesIncluded && data.chargesIncluded.length > 0 && prestationsIncluded.length === 0 && (
+          <>
+            <Text style={[styles.text, { marginTop: 4 }]}>Charges incluses :</Text>
+            {data.chargesIncluded.map((c, i) => (
+              <Text key={i} style={[styles.text, styles.bullet]}>• {c}</Text>
+            ))}
+          </>
+        )}
+        <Text style={[styles.text, { marginTop: 4 }]}>
           Le loyer est payable <Text style={styles.bold}>mensuellement à terme à échoir</Text>,
-          au plus tard le 5 de chaque mois par : Virement bancaire ou Espèces
+          au plus tard le 5 de chaque mois.
         </Text>
+        {data.minIncome && (
+          <Text style={[styles.text, styles.small]}>
+            Critère de revenus minimum vérifié : {data.minIncome} €/mois
+          </Text>
+        )}
 
         <View style={styles.separator} />
 
@@ -196,12 +297,15 @@ export default function BailTemplate({ data }: { data: BailData }) {
         <Text style={styles.sectionTitle}>Article 5 – Dépôt de garantie</Text>
         <Text style={styles.text}>
           À la signature du présent contrat, le Locataire verse un{' '}
-          <Text style={styles.bold}>dépôt de garantie</Text> d'un montant de{' '}
-          <Text style={styles.bold}>{data.deposit} €</Text>.
+          <Text style={styles.bold}>dépôt de garantie de {data.deposit} €</Text>.
+        </Text>
+        <Text style={styles.text}>
+          Moyen(s) de paiement accepté(s) : <Text style={styles.bold}>{paymentMethodsText}</Text>.
         </Text>
         <Text style={styles.text}>
           Ce dépôt sera restitué <Text style={styles.bold}>dans un délai maximum de 2 mois</Text>{' '}
-          après le départ, sous réserve d'un état des lieux de sortie conforme.
+          après le départ du Locataire, sous réserve d'un état des lieux de sortie conforme et du
+          paiement intégral des loyers et charges dus.
         </Text>
 
         <View style={styles.separator} />
@@ -209,17 +313,14 @@ export default function BailTemplate({ data }: { data: BailData }) {
         {/* ARTICLE 6 */}
         <Text style={styles.sectionTitle}>Article 6 – État des lieux</Text>
         <Text style={styles.text}>
-          Un <Text style={styles.bold}>état des lieux d'entrée</Text> sera réalisé à la remise
-          des clés, accompagné de photos si nécessaire.
-        </Text>
-        <Text style={styles.text}>
-          Un <Text style={styles.bold}>état des lieux de sortie</Text> sera effectué au départ
-          du Locataire.
+          Un <Text style={styles.bold}>état des lieux d'entrée</Text> sera réalisé contradictoirement
+          à la remise des clés. Un <Text style={styles.bold}>état des lieux de sortie</Text> sera
+          effectué au départ du Locataire et comparé à celui d'entrée.
         </Text>
 
         <View style={styles.separator} />
 
-        {/* ARTICLE 7 */}
+        {/* ARTICLE 7 — Résiliation */}
         <Text style={styles.sectionTitle}>Article 7 – Résiliation anticipée</Text>
         <Text style={styles.text}>
           Le présent contrat peut être résilié <Text style={styles.bold}>avant terme</Text> :
@@ -231,30 +332,52 @@ export default function BailTemplate({ data }: { data: BailData }) {
         <Text style={[styles.text, styles.bullet]}>
           • Par le Bailleur : avec un préavis de{' '}
           <Text style={styles.bold}>{noticeDays} jours</Text>, sauf en cas de faute grave
-          (non-paiement, usage interdit...)
+          (non-paiement, usage interdit, troubles de voisinage)
         </Text>
 
         <View style={styles.separator} />
 
-        {/* ARTICLE 8 */}
+        {/* ARTICLE 8 — Obligations */}
         <Text style={styles.sectionTitle}>Article 8 – Obligations du Locataire</Text>
         <Text style={styles.text}>Le Locataire s'engage à :</Text>
-        <Text style={[styles.text, styles.bullet]}>
-          • Utiliser les lieux en <Text style={styles.bold}>bon père de famille</Text>
-        </Text>
-        <Text style={[styles.text, styles.bullet]}>• Ne pas sous-louer, ni céder le contrat</Text>
-        <Text style={[styles.text, styles.bullet]}>• Ne pas transformer le local</Text>
-        <Text style={[styles.text, styles.bullet]}>• Respecter la tranquillité des lieux</Text>
+        <Text style={[styles.text, styles.bullet]}>• Utiliser les lieux en bon père de famille</Text>
+        <Text style={[styles.text, styles.bullet]}>• Ne pas sous-louer ni céder le contrat</Text>
+        <Text style={[styles.text, styles.bullet]}>• Ne pas transformer le local sans accord écrit</Text>
+        <Text style={[styles.text, styles.bullet]}>• Respecter la tranquillité des lieux et du voisinage</Text>
         <Text style={[styles.text, styles.bullet]}>• Ne pas y élire domicile fiscal ou social</Text>
+        <Text style={[styles.text, styles.bullet]}>• Respecter les conditions d'accueil énoncées à l'article 1</Text>
+
+        {/* DPE */}
+        {(data.dpeClass || data.dpeEnergyValue) && (
+          <>
+            <View style={styles.separator} />
+            <Text style={styles.sectionTitle}>Article 9 – Diagnostic de Performance Énergétique</Text>
+            {data.dpeClass && (
+              <Text style={styles.text}>
+                Classe énergie : <Text style={styles.bold}>{data.dpeClass}</Text>
+                {data.dpeEnergyValue && <Text> ({data.dpeEnergyValue} kWh/m²/an)</Text>}
+              </Text>
+            )}
+            {data.dpeGesClass && (
+              <Text style={styles.text}>
+                Classe GES : <Text style={styles.bold}>{data.dpeGesClass}</Text>
+                {data.dpeGesValue && <Text> ({data.dpeGesValue} kgCO₂/m²/an)</Text>}
+              </Text>
+            )}
+            {data.dpeDate && (
+              <Text style={[styles.text, styles.small]}>Date du diagnostic : {data.dpeDate}</Text>
+            )}
+          </>
+        )}
 
         <View style={styles.separator} />
 
-        {/* ARTICLE 9 */}
-        <Text style={styles.sectionTitle}>Article 9 – Loi applicable</Text>
+        <Text style={styles.sectionTitle}>Article 10 – Loi applicable et juridiction</Text>
         <Text style={styles.text}>
           Le présent contrat est régi par les{' '}
-          <Text style={styles.bold}>articles 1708 et suivants du Code civil</Text>.
-          Il ne constitue pas un bail soumis à la loi du 6 juillet 1989.
+          <Text style={styles.bold}>articles 1708 et suivants du Code civil</Text>. Il ne
+          constitue pas un bail soumis à la loi du 6 juillet 1989. Tout litige sera porté devant
+          les tribunaux compétents du lieu de situation du bien.
         </Text>
 
         <View style={styles.separator} />

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const { data: application } = await supabaseAdmin
       .from('applications')
-      .select(`*, properties(*, profiles(full_name)), profiles(full_name)`)
+      .select(`*, properties(*, profiles(*)), profiles(*)`)
       .eq('id', applicationId)
       .single()
 
@@ -74,16 +74,53 @@ export async function POST(req: NextRequest) {
     endDate.setMonth(endDate.getMonth() + application.duration_selected)
     const formatDate = (d: Date) => d.toLocaleDateString('fr-FR')
 
+    const lp = property.profiles
+    const tp = application.profiles
+
+    const landlordPersonalAddress = [
+      lp?.street_address, lp?.postal_code, lp?.address_city,
+    ].filter(Boolean).join(', ') || `${property.address}, ${property.city}`
+
+    const propertyDescription = [
+      property.property_type,
+      property.surface ? `${property.surface} m²` : null,
+      property.rooms ? `${property.rooms} pièce${property.rooms > 1 ? 's' : ''}` : null,
+      property.furnished ? 'meublé' : 'non meublé',
+    ].filter(Boolean).join(' · ')
+
     const bailData = {
-      landlordName: property.profiles.full_name,
-      landlordAddress: property.address + ', ' + property.city,
-      tenantName: application.profiles.full_name,
-      propertyAddress: property.address + ', ' + property.city,
+      landlordName: lp?.full_name ?? 'Bailleur',
+      landlordAddress: landlordPersonalAddress,
+      landlordBirthDate: lp?.birth_date ?? null,
+      landlordType: lp?.landlord_type ?? 'particulier',
+      tenantName: tp?.full_name ?? 'Locataire',
+      tenantBirthDate: tp?.birth_date ?? null,
+      tenantCurrentAddress: [tp?.street_address, tp?.postal_code, tp?.address_city].filter(Boolean).join(', ') || null,
+      propertyAddress: `${property.address}, ${property.city}`,
+      propertyType: property.property_type ?? null,
+      propertyDescription,
       propertySurface: property.surface ? String(property.surface) : '',
+      propertyRooms: property.rooms ?? null,
+      propertyFurnished: property.furnished ?? true,
+      equipments: property.equipments ?? [],
+      petsAllowed: property.pets_allowed ?? false,
+      smokingAllowed: property.smoking_allowed ?? false,
+      handicapAccessible: property.handicap_accessible ?? false,
+      rentHc: property.rent_hc,
+      chargesAmount: property.charges,
       rentTotal: property.rent_hc + property.charges,
-      charges: property.charges,
+      chargesMode: property.charges_mode ?? 'provisions',
+      chargesIncluded: property.charges_included ?? [],
+      prestations: property.prestations ?? null,
       deposit: property.deposit,
-      chargesIncluded: property.charges_included ?? ['Eau', 'Électricité', 'Internet'],
+      depositPaymentMethods: property.deposit_payment_methods ?? [],
+      minIncome: property.criteria_min_income ?? null,
+      zoneTendue: property.zone_tendue ?? null,
+      dpeClass: property.dpe_class ?? null,
+      dpeDate: property.dpe_date ?? null,
+      dpeEnergyValue: property.dpe_energy_value ?? null,
+      dpeGesClass: property.dpe_ges_class ?? null,
+      dpeGesValue: property.dpe_ges_value ?? null,
       durationMonths: application.duration_selected,
       startDate: formatDate(startDate),
       endDate: formatDate(endDate),

@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
     .from('applications')
     .select(`
       *,
-      properties (*, profiles (full_name)),
-      profiles (full_name)
+      properties (*, profiles (*)),
+      profiles (*)
     `)
     .eq('id', applicationId)
     .single()
@@ -54,16 +54,58 @@ export async function POST(req: NextRequest) {
   const startDate = new Date()
   const endDate = addMonths(startDate, application.duration_selected)
 
+  // Adresse perso du bailleur (depuis son profil — fallback sur adresse du bien si non renseignée)
+  const landlordPersonalAddress = [
+    landlordProfile?.street_address,
+    landlordProfile?.postal_code,
+    landlordProfile?.address_city,
+  ].filter(Boolean).join(', ') || `${property.address}, ${property.city}`
+
+  // Description bien (type + surface + pièces + meublé)
+  const propertyDescription = [
+    property.property_type,
+    property.surface ? `${property.surface} m²` : null,
+    property.rooms ? `${property.rooms} pièce${property.rooms > 1 ? 's' : ''}` : null,
+    property.furnished ? 'meublé' : 'non meublé',
+  ].filter(Boolean).join(' · ')
+
   const bailData = {
-    landlordName: landlordProfile.full_name,
-    landlordAddress: property.address + ', ' + property.city,
-    tenantName: tenantProfile.full_name,
-    propertyAddress: property.address + ', ' + property.city,
+    landlordName: landlordProfile?.full_name ?? 'Bailleur',
+    landlordAddress: landlordPersonalAddress,
+    landlordBirthDate: landlordProfile?.birth_date ?? null,
+    landlordType: landlordProfile?.landlord_type ?? 'particulier',
+    tenantName: tenantProfile?.full_name ?? 'Locataire',
+    tenantBirthDate: tenantProfile?.birth_date ?? null,
+    tenantCurrentAddress: [
+      tenantProfile?.street_address,
+      tenantProfile?.postal_code,
+      tenantProfile?.address_city,
+    ].filter(Boolean).join(', ') || null,
+    propertyAddress: `${property.address}, ${property.city}`,
+    propertyType: property.property_type ?? null,
+    propertyDescription,
     propertySurface: property.surface ? String(property.surface) : '',
+    propertyRooms: property.rooms ?? null,
+    propertyFurnished: property.furnished ?? true,
+    equipments: property.equipments ?? [],
+    petsAllowed: property.pets_allowed ?? false,
+    smokingAllowed: property.smoking_allowed ?? false,
+    handicapAccessible: property.handicap_accessible ?? false,
+    rentHc: property.rent_hc,
+    chargesAmount: property.charges,
     rentTotal: property.rent_hc + property.charges,
-    charges: property.charges,
+    chargesMode: property.charges_mode ?? 'provisions',
+    chargesIncluded: property.charges_included ?? [],
+    prestations: property.prestations ?? null,
     deposit: property.deposit,
-    chargesIncluded: property.charges_included ?? ['Eau', 'Électricité', 'Internet'],
+    depositPaymentMethods: property.deposit_payment_methods ?? [],
+    minIncome: property.criteria_min_income ?? null,
+    zoneTendue: property.zone_tendue ?? null,
+    dpeClass: property.dpe_class ?? null,
+    dpeDate: property.dpe_date ?? null,
+    dpeEnergyValue: property.dpe_energy_value ?? null,
+    dpeGesClass: property.dpe_ges_class ?? null,
+    dpeGesValue: property.dpe_ges_value ?? null,
     durationMonths: application.duration_selected,
     startDate: formatDate(startDate),
     endDate: formatDate(endDate),
