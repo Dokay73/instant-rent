@@ -48,7 +48,7 @@ export default function Navbar() {
     <header className="bg-[#0B1F4B] border-b border-white/5">
       <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="block">
-          <img src="/logo/logo-white.png" alt="Instant Rent" className="h-14 w-auto" />
+          <img src="/logo/logo-white.png" alt="Instant Rent" className="h-24 w-auto -my-2" />
         </Link>
 
         <nav className="flex items-center gap-6">
