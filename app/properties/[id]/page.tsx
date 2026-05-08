@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import FavoriteButton from '@/components/FavoriteButton'
 import ContactButton from '@/components/ContactButton'
+import PropertyGallery from '@/components/PropertyGallery'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -52,38 +53,12 @@ export default async function PropertyPage({
 
           {/* Left */}
           <div className="space-y-5">
-            {/* Image */}
-            <div className="aspect-[16/9] bg-[#0B1F4B]/5 rounded-2xl overflow-hidden relative">
-              {property.images_urls?.[0] ? (
-                <img src={property.images_urls[0]} alt={property.address} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-20">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z" fill="#0B1F4B" />
-                    <rect x="9" y="13" width="6" height="8" fill="#0B1F4B" />
-                  </svg>
-                  <p className="text-sm text-slate-400">Pas de photo</p>
-                </div>
-              )}
-              {/* DPE badge */}
-              {property.dpe_class && (
-                <span className="absolute top-4 left-4 text-sm font-bold text-white px-3 py-1.5 rounded-xl shadow"
-                  style={{ backgroundColor: DPE_COLORS[property.dpe_class] }}>
-                  DPE {property.dpe_class}
-                </span>
-              )}
-            </div>
-
-            {/* Photo gallery */}
-            {property.images_urls && property.images_urls.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {property.images_urls.slice(1, 5).map((url: string, i: number) => (
-                  <div key={i} className="aspect-square rounded-xl overflow-hidden bg-slate-100">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Galerie photo avec lightbox */}
+            <PropertyGallery
+              images={property.images_urls ?? []}
+              alt={property.title || property.address}
+              dpeClass={property.dpe_class}
+            />
 
             {/* Title + description */}
             <div className="bg-white rounded-2xl border border-slate-100 p-6">
