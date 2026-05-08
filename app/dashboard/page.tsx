@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import TogglePublished from '@/components/TogglePublished'
 import DeleteProperty from '@/components/DeleteProperty'
+import StatCard from '@/components/dashboard/StatCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -134,18 +135,9 @@ export default async function DashboardPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: properties?.length ?? 0, label: 'Biens' },
-                { value: published, label: 'En ligne' },
-                { value: totalApplications, label: 'Candidatures' },
-              ].map(stat => (
-                <div key={stat.label} className="bg-white rounded-2xl border border-slate-100 p-4 text-center">
-                  <p className="text-2xl font-bold text-[#0B1F4B]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">{stat.label}</p>
-                </div>
-              ))}
+              <StatCard value={properties?.length ?? 0} label="Biens" delay={0} />
+              <StatCard value={published} label="En ligne" delay={0.08} />
+              <StatCard value={totalApplications} label="Candidatures" delay={0.16} />
             </div>
 
             {/* Property list */}
