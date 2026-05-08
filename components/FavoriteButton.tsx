@@ -35,6 +35,14 @@ export default function FavoriteButton({ propertyId }: { propertyId: string }) {
       if (error) console.error('Favorite delete error:', error)
       else setSaved(false)
     } else {
+      // S'assurer que le profil existe avant l'insert favoris
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          full_name: (user.user_metadata as any)?.full_name ?? user.email ?? 'Utilisateur',
+        }, { onConflict: 'id', ignoreDuplicates: true })
+      }
       const { error } = await supabase.from('favorites')
         .insert({ user_id: userId, property_id: propertyId })
       if (error) console.error('Favorite insert error:', error)

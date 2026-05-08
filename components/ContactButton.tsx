@@ -25,6 +25,12 @@ export default function ContactButton({
       return
     }
 
+    // S'assurer que le profil tenant existe avant de créer la conversation
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      full_name: (user.user_metadata as any)?.full_name ?? user.email ?? 'Utilisateur',
+    }, { onConflict: 'id', ignoreDuplicates: true })
+
     // Cherche conversation existante
     const { data: existing, error: searchError } = await supabase
       .from('conversations')
