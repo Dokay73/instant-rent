@@ -65,11 +65,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Bandeau accès anticipé */}
+      {/* Bandeau accès anticipé / pré-lancement */}
       <Link href="/early-access"
         className="block bg-[#4A6CF7] text-white text-center text-sm py-2.5 px-4 hover:bg-[#3a5ce5] transition-colors">
-        <span className="font-semibold">🚀 Accès anticipé ouvert</span>
-        <span className="hidden sm:inline opacity-80"> · Inscrivez-vous pour publier votre bien en avant-première</span>
+        <span className="font-semibold">🚀 Pré-lancement ouvert</span>
+        <span className="hidden sm:inline opacity-80"> · Inscrivez-vous et bénéficiez de 2 mois gratuits à l'ouverture</span>
         <span className="ml-2 underline">Rejoindre →</span>
       </Link>
       <Navbar />

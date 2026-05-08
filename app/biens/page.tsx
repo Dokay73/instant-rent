@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import PropertyGrid from '@/components/PropertyGrid'
 import BiensCount from '@/components/BiensCount'
+import { isPreLaunch, isAdminEmail } from '@/lib/launch'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +14,29 @@ export default async function BiensPage({
 }) {
   const { city } = await searchParams
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Pendant le pré-lancement, on bloque la liste publique sauf pour les admins
+  if (isPreLaunch() && !isAdminEmail(user?.email)) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+          <p className="text-xs text-[#4A6CF7] font-semibold uppercase tracking-widest mb-3">Bientôt disponible</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-4">
+            Les annonces ouvrent très bientôt
+          </h1>
+          <p className="text-slate-500 mb-8 leading-relaxed">
+            Instant Rent est en phase de pré-lancement. Inscrivez-vous sur la liste d'attente pour être prévenu en avant-première et bénéficier d'avantages exclusifs.
+          </p>
+          <Link href="/early-access"
+            className="inline-flex items-center gap-2 bg-[#0B1F4B] text-white px-6 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors">
+            Rejoindre la liste d'attente →
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   let query = supabase
     .from('properties')

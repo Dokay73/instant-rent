@@ -5,6 +5,7 @@ import ContactButton from '@/components/ContactButton'
 import PropertyGallery from '@/components/PropertyGallery'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { isPreLaunch, isAdminEmail } from '@/lib/launch'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,13 @@ export default async function PropertyPage({
   // Bien visible uniquement s'il est publié et vacant (sauf pour le propriétaire)
   const { data: { user } } = await supabase.auth.getUser()
   const isOwner = user?.id === property.owner_id
-  if (!isOwner && (!property.is_published || property.status !== 'vacant')) {
+  const isAdmin = isAdminEmail(user?.email)
+  if (!isOwner && !isAdmin && (!property.is_published || property.status !== 'vacant')) {
+    notFound()
+  }
+
+  // Pendant le pré-lancement, blocage des fiches publiques sauf admin/propriétaire
+  if (isPreLaunch() && !isOwner && !isAdmin) {
     notFound()
   }
 
