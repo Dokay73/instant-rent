@@ -274,7 +274,7 @@ export default function HomePage() {
               >
                 <span
                   className="text-5xl font-bold flex-shrink-0 w-10 leading-none mt-1"
-                  style={{ color: '#f1f5f9', fontVariantNumeric: 'tabular-nums' }}
+                  style={{ color: '#cbd5e1', fontVariantNumeric: 'tabular-nums' }}
                 >
                   {String(i + 1).padStart(2, '0')}
                 </span>
@@ -305,7 +305,7 @@ export default function HomePage() {
               <ScrollReveal key={item.step} direction="up" delay={i * 0.12} className="bg-slate-50 p-10">
                 <p
                   className="text-6xl font-bold leading-none"
-                  style={{ color: '#e2e8f0', fontVariantNumeric: 'tabular-nums' }}
+                  style={{ color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}
                 >
                   {item.step}
                 </p>
