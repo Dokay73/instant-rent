@@ -84,9 +84,9 @@ export default function EarlyAccessPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-[#0B1F4B] border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center">
+        <div className="max-w-6xl mx-auto px-4 h-20 flex items-center">
           <Link href="/" className="block">
-            <img src="/logo/logo-dark.png" alt="Instant Rent" className="h-12 w-auto" />
+            <img src="/logo/logo-dark.png" alt="Instant Rent" className="h-16 w-auto" />
           </Link>
         </div>
       </header>
