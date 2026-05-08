@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
-import PropertyCard from '@/components/PropertyCard'
+import PropertyGrid from '@/components/PropertyGrid'
 import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
@@ -47,11 +47,7 @@ export default async function MesFavorisPage() {
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {properties.map((property: any) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          <PropertyGrid properties={properties} />
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
-import PropertyCard from '@/components/PropertyCard'
+import PropertyGrid from '@/components/PropertyGrid'
+import BiensCount from '@/components/BiensCount'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,10 +38,7 @@ export default async function BiensPage({
               <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mb-2">Annonces</p>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Biens disponibles</h1>
               {properties && properties.length > 0 && (
-                <p className="text-slate-500 mt-1 text-sm">
-                  {properties.length} bien{properties.length > 1 ? 's' : ''} disponible{properties.length > 1 ? 's' : ''}
-                  {city ? ` à ${city}` : ''}
-                </p>
+                <BiensCount count={properties.length} city={city} />
               )}
             </div>
 
@@ -64,11 +62,7 @@ export default async function BiensPage({
       {/* Listings */}
       <section className="max-w-6xl mx-auto px-4 py-10">
         {properties && properties.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map(property => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          <PropertyGrid properties={properties} />
         ) : (
           <div className="text-center py-24">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
