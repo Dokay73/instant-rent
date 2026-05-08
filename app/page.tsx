@@ -383,10 +383,8 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 pb-10 border-b border-white/5">
             <div>
-              <p className="font-bold text-lg text-white lowercase">
-                instant<span className="text-[#4A6CF7]"> rent</span>
-              </p>
-              <p className="text-sm mt-2 text-slate-500 max-w-xs leading-relaxed">
+              <img src="/logo/logo-dark.png" alt="Instant Rent" className="h-14 w-auto" />
+              <p className="text-sm mt-3 text-slate-500 max-w-xs leading-relaxed">
                 La location flexible sous Bail Code Civil, 100% en ligne.
               </p>
             </div>
