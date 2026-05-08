@@ -8,6 +8,13 @@ export default defineConfig({
     baseURL: 'https://instant-rent-six.vercel.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    storageState: {
+      cookies: [],
+      origins: [{
+        origin: 'https://instant-rent-six.vercel.app',
+        localStorage: [{ name: 'cookies_accepted', value: 'true' }],
+      }],
+    },
   },
   projects: [
     {

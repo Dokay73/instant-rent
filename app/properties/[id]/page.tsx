@@ -5,6 +5,8 @@ import ContactButton from '@/components/ContactButton'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 const DPE_COLORS: Record<string, string> = {
   A: '#00B050', B: '#92D050', C: '#CCCC00', D: '#FFC000', E: '#FF6600', F: '#FF0000', G: '#C00000',
 }

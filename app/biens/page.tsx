@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import PropertyCard from '@/components/PropertyCard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function BiensPage({
   searchParams,
 }: {
