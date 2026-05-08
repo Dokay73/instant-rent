@@ -43,10 +43,20 @@ export default function RegisterPage() {
     }
 
     if (signUpData.user) {
+      // Vérifier si l'user était pré-inscrit en tant que propriétaire (promo 2 mois)
+      const { data: waitlistEntry } = await supabase
+        .from('waitlist')
+        .select('role')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle()
+
+      const hasPromo = waitlistEntry?.role === 'owner'
+
       await supabase.from('profiles').upsert({
         id: signUpData.user.id,
         full_name: fullName,
         cgu_accepted_at: new Date().toISOString(),
+        has_launch_promo: hasPromo,
       })
     }
 

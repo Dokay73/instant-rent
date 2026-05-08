@@ -32,6 +32,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Candidature invalide' }, { status: 400 })
   }
 
+  // Vérifier si le proprio bénéficie de la promo de lancement (2 mois gratuits)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('has_launch_promo')
+    .eq('id', user.id)
+    .single()
+
+  const trialDays = profile?.has_launch_promo ? 60 : undefined
+
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -43,10 +52,12 @@ export async function POST(req: NextRequest) {
       applicationId,
       propertyId,
       landlordId: user.id,
+      hasLaunchPromo: trialDays ? 'true' : 'false',
     },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
     subscription_data: {
+      ...(trialDays && { trial_period_days: trialDays }),
       metadata: {
         applicationId,
         propertyId,
