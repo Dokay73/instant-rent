@@ -70,16 +70,33 @@ Réponds en JSON strict (sans bloc de code markdown) avec cette structure :
   }
 }`
 
-export async function generateDailyContent() {
+export async function generateDailyContent(context?: {
+  recentContents?: Array<{ type: string; title: string; status: string; created_at: string }>
+  waitlistCount?: number
+  recentCities?: string[]
+}) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY manquante')
 
   const client = new Anthropic({ apiKey })
 
+  let memoryBlock = ''
+  if (context?.recentContents && context.recentContents.length > 0) {
+    memoryBlock = `\n\n## Contenus déjà publiés récemment (NE PAS les répéter, varier les angles)\n${
+      context.recentContents.map(c => `- [${c.type}] ${c.title} (${c.status})`).join('\n')
+    }`
+  }
+  if (context?.waitlistCount) {
+    memoryBlock += `\n\n## Inscrits waitlist actuels : ${context.waitlistCount} propriétaires`
+    if (context.recentCities && context.recentCities.length > 0) {
+      memoryBlock += ` (villes représentées : ${context.recentCities.slice(0, 5).join(', ')})`
+    }
+  }
+
   const message = await client.messages.create({
     model: 'claude-sonnet-4-5',
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: SYSTEM_PROMPT + memoryBlock,
     messages: [{ role: 'user', content: USER_PROMPT }],
   })
 

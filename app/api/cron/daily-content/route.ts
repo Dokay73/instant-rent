@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateDailyContent } from '@/lib/agents/content-generator'
-
-const ADMIN_EMAILS = ['hakangdz91@gmail.com']
+import { sendDailyContentReviewEmail } from '@/lib/email'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(_req: NextRequest) {
-  try {
-    const supabase = await createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !ADMIN_EMAILS.includes(user.email ?? '')) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
-    }
+const ADMIN_EMAIL = 'hakangdz91@gmail.com'
 
-    // Charger la mémoire
+export async function GET(req: NextRequest) {
+  // Sécurité minimale : vérifier le header d'autorisation Vercel Cron
+  const authHeader = req.headers.get('authorization')
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    // 1. Lire l'historique pour mémoire
     const { data: recentContents } = await supabaseAdmin
       .from('generated_content')
       .select('type, title, status, created_at')
@@ -39,12 +39,14 @@ export async function POST(_req: NextRequest) {
       (recentWaitlist ?? []).map(w => w.city).filter(Boolean) as string[]
     ))
 
+    // 2. Générer
     const contents = await generateDailyContent({
       recentContents: recentContents ?? [],
       waitlistCount: waitlistCount ?? 0,
       recentCities,
     })
 
+    // 3. Sauvegarder
     const inserted: any[] = []
     for (const c of contents) {
       const { data } = await supabaseAdmin
@@ -55,9 +57,22 @@ export async function POST(_req: NextRequest) {
       if (data) inserted.push(data)
     }
 
-    return NextResponse.json({ ok: true, contents: inserted })
+    // 4. Envoyer email de validation
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://instant-rent-six.vercel.app'
+    await sendDailyContentReviewEmail({
+      email: ADMIN_EMAIL,
+      contents: inserted,
+      appUrl,
+    })
+
+    return NextResponse.json({
+      ok: true,
+      generated: inserted.length,
+      memorized: recentContents?.length ?? 0,
+      waitlistCount: waitlistCount ?? 0,
+    })
   } catch (err: any) {
-    console.error('Generate content error:', err)
+    console.error('Cron daily-content error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

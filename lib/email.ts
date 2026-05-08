@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 
-const FROM = 'Instant Rent <noreply@instant-rent.fr>'
+// FROM provisoire — domaine sandbox Resend (envoi limité à l'email du compte Resend)
+// Une fois le domaine vérifié, repasser à 'noreply@instant-rent.fr'
+const FROM = 'Instant Rent <onboarding@resend.dev>'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -104,6 +106,51 @@ export async function sendApplicationResponseEmail({
           </a>
         `}
         <p style="color: #94a3b8; font-size: 12px; margin-top: 32px;">Instant Rent · Vous recevez cet email car vous avez déposé une candidature sur la plateforme.</p>
+      </div>
+    `,
+  })
+}
+
+export async function sendDailyContentReviewEmail({
+  email,
+  contents,
+  appUrl,
+}: {
+  email: string
+  contents: Array<{ id: string; type: string; title: string; content: string }>
+  appUrl: string
+}) {
+  const resend = getResend(); if (!resend) return
+  const TYPE_LABEL: Record<string, string> = {
+    facebook_post: '📘 Post Facebook',
+    leboncoin_ad: '🛒 Annonce LeBonCoin',
+    dm_template: '💬 Message DM',
+  }
+
+  const blocks = contents.map(c => `
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+      <p style="margin: 0 0 6px; font-size: 12px; color: #4A6CF7; font-weight: 600;">${TYPE_LABEL[c.type] ?? c.type}</p>
+      <p style="margin: 0 0 8px; font-weight: 600; color: #0f172a; font-size: 14px;">${esc(c.title)}</p>
+      <pre style="margin: 0; white-space: pre-wrap; font-family: inherit; font-size: 13px; color: #475569; line-height: 1.5;">${esc(c.content)}</pre>
+    </div>
+  `).join('')
+
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: `🤖 Contenu Instant Rent du ${new Date().toLocaleDateString('fr-FR')}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 700px; margin: 0 auto; padding: 24px;">
+        <div style="background: #0B1F4B; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+          <h1 style="color: white; font-size: 20px; margin: 0;">Instant<span style="color: #4A6CF7;"> Rent</span> · Agent IA</h1>
+        </div>
+        <p style="color: #475569; font-size: 15px;">L'agent a généré <strong>${contents.length} contenus</strong> à publier aujourd'hui :</p>
+        ${blocks}
+        <a href="${appUrl}/admin/contenus"
+          style="display: inline-block; background: #0B1F4B; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Valider sur le dashboard →
+        </a>
+        <p style="color: #94a3b8; font-size: 12px; margin-top: 32px;">Cet email a été généré automatiquement par votre agent IA.</p>
       </div>
     `,
   })
