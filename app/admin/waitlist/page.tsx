@@ -20,11 +20,9 @@ export default async function AdminWaitlistPage() {
     .order('created_at', { ascending: false })
 
   const total = entries?.length ?? 0
+  const owners = (entries ?? []).filter((e: any) => e.role === 'owner').length
+  const tenants = (entries ?? []).filter((e: any) => e.role === 'tenant').length
   const cities = new Set((entries ?? []).map(e => e.city).filter(Boolean))
-  const types = (entries ?? []).reduce((acc: Record<string, number>, e: any) => {
-    if (e.property_type) acc[e.property_type] = (acc[e.property_type] || 0) + 1
-    return acc
-  }, {})
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -36,20 +34,22 @@ export default async function AdminWaitlistPage() {
           <p className="text-sm text-slate-400 mt-1">{total} inscription{total > 1 ? 's' : ''}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white border border-slate-100 rounded-2xl p-5">
-            <p className="text-xs text-slate-400 mb-1">Total inscrits</p>
+            <p className="text-xs text-slate-400 mb-1">Total</p>
             <p className="text-2xl font-bold text-slate-900">{total}</p>
+          </div>
+          <div className="bg-white border border-slate-100 rounded-2xl p-5">
+            <p className="text-xs text-slate-400 mb-1">🏠 Propriétaires</p>
+            <p className="text-2xl font-bold text-slate-900">{owners}</p>
+          </div>
+          <div className="bg-white border border-slate-100 rounded-2xl p-5">
+            <p className="text-xs text-slate-400 mb-1">🔑 Locataires</p>
+            <p className="text-2xl font-bold text-slate-900">{tenants}</p>
           </div>
           <div className="bg-white border border-slate-100 rounded-2xl p-5">
             <p className="text-xs text-slate-400 mb-1">Villes uniques</p>
             <p className="text-2xl font-bold text-slate-900">{cities.size}</p>
-          </div>
-          <div className="bg-white border border-slate-100 rounded-2xl p-5">
-            <p className="text-xs text-slate-400 mb-1">Types les + demandés</p>
-            <p className="text-sm font-semibold text-slate-900 mt-1.5 truncate">
-              {Object.entries(types).sort((a: any, b: any) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k} (${v})`).join(', ') || '—'}
-            </p>
           </div>
         </div>
 
@@ -62,6 +62,7 @@ export default async function AdminWaitlistPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
+                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">Profil</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">Nom</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">Email</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">Ville</th>
@@ -72,6 +73,13 @@ export default async function AdminWaitlistPage() {
               <tbody className="divide-y divide-slate-50">
                 {(entries ?? []).map((entry: any) => (
                   <tr key={entry.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        entry.role === 'tenant' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'
+                      }`}>
+                        {entry.role === 'tenant' ? '🔑 Locataire' : '🏠 Propriétaire'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 font-medium text-slate-900">{entry.full_name}</td>
                     <td className="px-4 py-3 text-slate-600">
                       <a href={`mailto:${entry.email}`} className="hover:text-[#4A6CF7]">{entry.email}</a>
