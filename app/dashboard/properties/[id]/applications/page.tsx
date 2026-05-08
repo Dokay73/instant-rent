@@ -7,6 +7,8 @@ import GenerateBailButton from './GenerateBailButton'
 import DocLink from '@/components/DocLink'
 import CancelBailButton from './CancelBailButton'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ApplicationsPage({
   params,
 }: {

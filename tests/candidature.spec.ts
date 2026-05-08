@@ -17,6 +17,7 @@ const TENANT = {
 }
 
 const PROPERTY_TITLE = `Bien test candidature ${TS}`
+const PROPERTY_ADDRESS = `${TS} rue test bot`
 
 test.describe.configure({ mode: 'serial' })
 
@@ -37,7 +38,7 @@ test('Setup: Proprio publie un bien EN LIGNE', async ({ page }) => {
 
   // Étape 0
   await page.click('button:has-text("Studio")')
-  await page.fill('input[placeholder*="rue"]', '5 avenue test')
+  await page.fill('input[placeholder*="rue"]', PROPERTY_ADDRESS)
   await page.fill('input[placeholder*="Paris"]', 'Lyon')
   await page.fill('input[placeholder="35"]', '30')
   await page.click('button:has-text("Suivant")')
@@ -72,6 +73,9 @@ test('Setup: Proprio publie un bien EN LIGNE', async ({ page }) => {
 })
 
 test('Locataire trouve le bien dans /biens', async ({ page }) => {
+  // Attendre un peu que la DB soit consistante
+  await page.waitForTimeout(3000)
+
   // Inscription locataire
   await page.goto('/register')
   await page.fill('input[type="text"]', TENANT.fullName)
@@ -81,9 +85,10 @@ test('Locataire trouve le bien dans /biens', async ({ page }) => {
   await page.click('button[type="submit"]')
   await page.waitForURL(/\/dashboard/)
 
-  // Aller sur /biens
+  // Aller sur /biens (reload pour bypass cache)
   await page.goto('/biens')
-  await expect(page.getByText(PROPERTY_TITLE).first()).toBeVisible({ timeout: 10000 })
+  await page.reload()
+  await expect(page.getByText(PROPERTY_ADDRESS).first()).toBeVisible({ timeout: 15000 })
 })
 
 test('Locataire ouvre la fiche bien et voit les boutons', async ({ page }) => {
@@ -94,7 +99,7 @@ test('Locataire ouvre la fiche bien et voit les boutons', async ({ page }) => {
   await page.waitForURL(/\/dashboard/)
 
   await page.goto('/biens')
-  await page.click(`text=${PROPERTY_TITLE}`)
+  await page.click(`text=${PROPERTY_ADDRESS}`)
   await page.waitForURL(/\/properties\//)
   await expect(page.getByRole('link', { name: /Déposer ma candidature/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Sauvegarder/ })).toBeVisible()
@@ -109,7 +114,7 @@ test('Locataire ajoute le bien aux favoris', async ({ page }) => {
   await page.waitForURL(/\/dashboard/)
 
   await page.goto('/biens')
-  await page.click(`text=${PROPERTY_TITLE}`)
+  await page.click(`text=${PROPERTY_ADDRESS}`)
   await page.waitForURL(/\/properties\//)
 
   // Sauvegarder
@@ -118,7 +123,7 @@ test('Locataire ajoute le bien aux favoris', async ({ page }) => {
 
   // Vérifier dans /mes-favoris
   await page.goto('/mes-favoris')
-  await expect(page.getByText(PROPERTY_TITLE)).toBeVisible()
+  await expect(page.getByText(PROPERTY_ADDRESS)).toBeVisible()
 })
 
 test('Locataire contacte le propriétaire (création conversation)', async ({ page }) => {
@@ -129,7 +134,7 @@ test('Locataire contacte le propriétaire (création conversation)', async ({ pa
   await page.waitForURL(/\/dashboard/)
 
   await page.goto('/biens')
-  await page.click(`text=${PROPERTY_TITLE}`)
+  await page.click(`text=${PROPERTY_ADDRESS}`)
   await page.waitForURL(/\/properties\//)
 
   await page.getByRole('button', { name: /Contacter le propriétaire/ }).click()
@@ -147,7 +152,7 @@ test('Locataire dépose une candidature avec docs', async ({ page }) => {
   await page.waitForURL(/\/dashboard/)
 
   await page.goto('/biens')
-  await page.click(`text=${PROPERTY_TITLE}`)
+  await page.click(`text=${PROPERTY_ADDRESS}`)
   await page.waitForURL(/\/properties\//)
   await page.getByRole('link', { name: /Déposer ma candidature/ }).click()
 

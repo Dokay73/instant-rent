@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 
 const ADMIN_EMAILS = ['hakangdz91@gmail.com']
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminWaitlistPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

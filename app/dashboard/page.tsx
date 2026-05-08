@@ -5,6 +5,8 @@ import Link from 'next/link'
 import TogglePublished from '@/components/TogglePublished'
 import DeleteProperty from '@/components/DeleteProperty'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

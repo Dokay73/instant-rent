@@ -3,6 +3,8 @@ import Navbar from '@/components/Navbar'
 import PropertyCard from '@/components/PropertyCard'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MesFavorisPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
