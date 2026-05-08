@@ -19,15 +19,23 @@ export default function ContactButton({
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
-    if (user.id === ownerId) { setLoading(false); return }
+    if (user.id === ownerId) {
+      alert('Vous ne pouvez pas vous contacter vous-même.')
+      setLoading(false)
+      return
+    }
 
     // Cherche conversation existante
-    const { data: existing } = await supabase
+    const { data: existing, error: searchError } = await supabase
       .from('conversations')
       .select('id')
       .eq('property_id', propertyId)
       .eq('tenant_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (searchError) {
+      console.error('Conversation search error:', searchError)
+    }
 
     if (existing) {
       router.push(`/messages/${existing.id}`)
@@ -35,14 +43,24 @@ export default function ContactButton({
     }
 
     // Crée la conversation
-    const { data: created } = await supabase
+    const { data: created, error: createError } = await supabase
       .from('conversations')
       .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id })
       .select('id')
       .single()
 
-    if (created) router.push(`/messages/${created.id}`)
-    else setLoading(false)
+    if (createError) {
+      console.error('Conversation create error:', createError)
+      alert('Erreur lors de la création de la conversation : ' + createError.message)
+      setLoading(false)
+      return
+    }
+
+    if (created) {
+      router.push(`/messages/${created.id}`)
+    } else {
+      setLoading(false)
+    }
   }
 
   return (

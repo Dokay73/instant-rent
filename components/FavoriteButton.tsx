@@ -18,7 +18,7 @@ export default function FavoriteButton({ propertyId }: { propertyId: string }) {
         .select('id')
         .eq('user_id', data.user.id)
         .eq('property_id', propertyId)
-        .single()
+        .maybeSingle()
       setSaved(!!fav)
       setLoading(false)
     })
@@ -28,15 +28,17 @@ export default function FavoriteButton({ propertyId }: { propertyId: string }) {
     if (!userId) return
     setLoading(true)
     if (saved) {
-      await supabase.from('favorites')
+      const { error } = await supabase.from('favorites')
         .delete()
         .eq('user_id', userId)
         .eq('property_id', propertyId)
-      setSaved(false)
+      if (error) console.error('Favorite delete error:', error)
+      else setSaved(false)
     } else {
-      await supabase.from('favorites')
+      const { error } = await supabase.from('favorites')
         .insert({ user_id: userId, property_id: propertyId })
-      setSaved(true)
+      if (error) console.error('Favorite insert error:', error)
+      else setSaved(true)
     }
     setLoading(false)
   }
