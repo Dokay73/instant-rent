@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import { motion } from 'motion/react'
+import ScrollReveal from '@/components/ui/ScrollReveal'
+import AnimatedCounter from '@/components/ui/AnimatedCounter'
 
 const LANDLORD_BENEFITS = [
   {
@@ -88,23 +91,39 @@ export default function HomePage() {
 
           {/* Left — content */}
           <div>
-            <div className="inline-flex items-center gap-2.5 border border-white/10 bg-white/5 text-white/60 text-xs font-medium px-4 py-2 rounded-full mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="inline-flex items-center gap-2.5 border border-white/10 bg-white/5 text-white/60 text-xs font-medium px-4 py-2 rounded-full mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4A6CF7] flex-shrink-0" />
               Bail Code Civil · 100% en ligne · Sans durée imposée
-            </div>
+            </motion.div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.06] tracking-tight">
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.06] tracking-tight">
               La location<br />
               <span className="text-[#4A6CF7]">sans contrainte</span>
-            </h1>
+            </motion.h1>
 
-            <p className="mt-6 text-white/55 text-lg leading-relaxed max-w-lg">
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="mt-6 text-white/55 text-lg leading-relaxed max-w-lg">
               Propriétaires, publiez votre bien. Locataires, trouvez le vôtre.
               Flexibilité totale, zéro frais si vacant.
-            </p>
+            </motion.p>
 
             {/* Search bar */}
-            <form onSubmit={handleSearch} className="mt-10 flex gap-2 max-w-md">
+            <motion.form
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
+              onSubmit={handleSearch} className="mt-10 flex gap-2 max-w-md">
               <input
                 value={city}
                 onChange={e => setCity(e.target.value)}
@@ -118,21 +137,29 @@ export default function HomePage() {
               >
                 Rechercher
               </button>
-            </form>
+            </motion.form>
 
             <Link href="/biens" className="mt-4 inline-block text-sm text-white/40 hover:text-white/70 transition-colors">
               Voir tous les biens disponibles →
             </Link>
 
             {/* Inline stats */}
-            <div className="mt-12 flex items-center gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.55, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="mt-12 flex items-center gap-6">
               <div>
-                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>100%</p>
+                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <AnimatedCounter value={100} suffix="%" />
+                </p>
                 <p className="text-xs text-white/40 mt-0.5">En ligne</p>
               </div>
               <div className="w-px h-8 bg-white/10" />
               <div>
-                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>23h</p>
+                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <AnimatedCounter value={23} suffix="h" />
+                </p>
                 <p className="text-xs text-white/40 mt-0.5">Délai de réponse moyen</p>
               </div>
               <div className="w-px h-8 bg-white/10" />
@@ -140,13 +167,18 @@ export default function HomePage() {
                 <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>0 €</p>
                 <p className="text-xs text-white/40 mt-0.5">Si votre bien est vacant</p>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Right — property card mockup */}
           <div className="hidden lg:flex flex-col gap-3">
             {/* Main card */}
-            <div className="bg-white rounded-2xl p-5 shadow-2xl" style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.45)' }}>
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
+              whileHover={{ y: -4 }}
+              className="bg-white rounded-2xl p-5 shadow-2xl cursor-pointer" style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.45)' }}>
               {/* Property image placeholder */}
               <div className="rounded-xl h-36 mb-4 relative overflow-hidden flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #1a3575 0%, #0B1F4B 100%)' }}>
@@ -169,10 +201,15 @@ export default function HomePage() {
                 </div>
                 <span className="text-xs text-slate-400">3 – 18 mois</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Application card */}
-            <div className="bg-white rounded-xl p-4 ml-8 border border-slate-100" style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.3)' }}>
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.55, ease: [0.21, 0.47, 0.32, 0.98] }}
+              whileHover={{ x: 4 }}
+              className="bg-white rounded-xl p-4 ml-8 border border-slate-100" style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.3)' }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#0B1F4B] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   ML
@@ -185,7 +222,7 @@ export default function HomePage() {
                   À traiter
                 </span>
               </div>
-            </div>
+            </motion.div>
           </div>
 
         </div>
@@ -229,8 +266,10 @@ export default function HomePage() {
           {/* Right — benefits list */}
           <div>
             {benefits.map((benefit, i) => (
-              <div
+              <ScrollReveal
                 key={benefit.title}
+                direction="up"
+                delay={i * 0.08}
                 className="flex gap-8 py-10 border-b border-slate-100 last:border-0"
               >
                 <span
@@ -243,7 +282,7 @@ export default function HomePage() {
                   <h3 className="font-semibold text-slate-900 text-lg leading-snug">{benefit.title}</h3>
                   <p className="text-slate-500 mt-2.5 leading-relaxed">{benefit.desc}</p>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
 
@@ -262,8 +301,8 @@ export default function HomePage() {
 
           {/* Steps grid with dividers */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-200 rounded-2xl overflow-hidden">
-            {howItWorks.map(item => (
-              <div key={item.step} className="bg-slate-50 p-10">
+            {howItWorks.map((item, i) => (
+              <ScrollReveal key={item.step} direction="up" delay={i * 0.12} className="bg-slate-50 p-10">
                 <p
                   className="text-6xl font-bold leading-none"
                   style={{ color: '#e2e8f0', fontVariantNumeric: 'tabular-nums' }}
@@ -272,7 +311,7 @@ export default function HomePage() {
                 </p>
                 <h3 className="font-semibold text-slate-900 mt-5 text-lg">{item.title}</h3>
                 <p className="text-slate-500 mt-2 leading-relaxed text-sm">{item.desc}</p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
 
@@ -298,12 +337,15 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Simple et transparent</h2>
           </div>
 
+          <ScrollReveal>
           <div className="bg-[#0B1F4B] text-white rounded-2xl p-10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(74,108,247,0.15) 0%, transparent 65%)' }} />
 
             <p className="text-xs text-white/40 uppercase tracking-widest mb-2 relative z-10">Par bien loué</p>
             <div className="flex items-baseline gap-1 relative z-10">
-              <span className="text-7xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>29</span>
+              <span className="text-7xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <AnimatedCounter value={29} duration={1.2} />
+              </span>
               <span className="text-3xl font-bold">€</span>
               <span className="text-white/40 ml-1 text-lg">/mois</span>
             </div>
@@ -332,6 +374,7 @@ export default function HomePage() {
               Commencer gratuitement
             </Link>
           </div>
+          </ScrollReveal>
         </div>
       </section>
 

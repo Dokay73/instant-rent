@@ -17,15 +17,19 @@ export default function PropertyCard({ property }: { property: Property }) {
 
   return (
     <Link href={`/properties/${property.id}`} className="group block">
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-200">
+      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl hover:shadow-slate-200/70 hover:-translate-y-1 hover:border-slate-200 transition-all duration-300 ease-out">
         {/* Image */}
         <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden">
           {property.images_urls?.[0] ? (
-            <img
-              src={property.images_urls[0]}
-              alt={property.address}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+            <>
+              <img
+                src={property.images_urls[0]}
+                alt={property.address}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+              />
+              {/* Overlay sombre au hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#0B1F4B]/5">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="opacity-20">
@@ -36,8 +40,8 @@ export default function PropertyCard({ property }: { property: Property }) {
           )}
           {/* Duration badge */}
           {property.allowed_durations.length > 0 && (
-            <div className="absolute bottom-3 left-3">
-              <span className="bg-white/90 backdrop-blur-sm text-slate-700 text-xs font-medium px-2.5 py-1 rounded-lg shadow-sm">
+            <div className="absolute bottom-3 left-3 transform group-hover:-translate-y-0.5 transition-transform duration-300">
+              <span className="bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm">
                 {Math.min(...property.allowed_durations)} – {Math.max(...property.allowed_durations)} mois
               </span>
             </div>
@@ -46,7 +50,7 @@ export default function PropertyCard({ property }: { property: Property }) {
 
         {/* Content */}
         <div className="p-5">
-          <p className="font-semibold text-slate-900 truncate leading-snug">{property.address}</p>
+          <p className="font-semibold text-slate-900 truncate leading-snug group-hover:text-[#0B1F4B] transition-colors">{property.address}</p>
           <p className="text-sm text-slate-400 mt-0.5">{property.city}</p>
 
           <div className="mt-4 flex items-end justify-between">
@@ -73,8 +77,9 @@ export default function PropertyCard({ property }: { property: Property }) {
 
           <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
             <span className="text-xs text-slate-400">Bail Code Civil</span>
-            <span className="text-xs text-[#4A6CF7] font-medium group-hover:underline">
-              Voir le bien →
+            <span className="text-xs text-[#4A6CF7] font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
+              Voir le bien
+              <span className="group-hover:translate-x-0.5 transition-transform">→</span>
             </span>
           </div>
         </div>
