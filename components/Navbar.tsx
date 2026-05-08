@@ -47,12 +47,8 @@ export default function Navbar() {
   return (
     <header className="bg-[#0B1F4B] border-b border-white/5">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-white tracking-tight">
-          <svg width="14" height="22" viewBox="0 0 14 22" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-            <rect x="2" y="0" width="10" height="6" rx="1" fill="#4A6CF7" />
-            <rect x="2" y="8" width="10" height="14" rx="1" fill="white" />
-          </svg>
-          <span>instant<span className="text-[#4A6CF7]"> rent</span></span>
+        <Link href="/" className="text-lg font-bold text-white tracking-tight lowercase">
+          instant<span className="text-[#4A6CF7]"> rent</span>
         </Link>
 
         <nav className="flex items-center gap-6">
