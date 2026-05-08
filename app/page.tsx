@@ -404,6 +404,7 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col gap-3">
                 <p className="text-white/70 font-medium text-xs uppercase tracking-widest">Communauté</p>
+                <Link href="/aide" className="hover:text-white transition-colors">Centre d'aide</Link>
                 <a href="https://discord.gg/BR8UsZJYJ" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Rejoindre Discord</a>
                 <a href="mailto:hakangdz@outlook.fr" className="hover:text-white transition-colors">Nous contacter</a>
               </div>

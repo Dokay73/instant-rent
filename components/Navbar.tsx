@@ -96,6 +96,10 @@ export default function Navbar() {
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <span className="w-4 text-center">✉</span> Messages
                   </Link>
+                  <Link href="/aide" onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <span className="w-4 text-center">?</span> Centre d'aide
+                  </Link>
                   <Link href="/profil" onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <span className="w-4 text-center">◉</span> Mon profil
