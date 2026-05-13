@@ -5,11 +5,17 @@ export default function PreLaunchBanner() {
   if (!isPreLaunch()) return null
 
   return (
-    <Link href="/early-access"
-      className="block bg-gradient-to-r from-[#4A6CF7] to-[#3a5ce5] text-white text-center text-sm py-2.5 px-4 hover:opacity-95 transition-opacity">
-      <span className="font-semibold">🚀 Pré-lancement Instant Rent</span>
-      <span className="hidden sm:inline opacity-90"> · Inscrivez-vous pour bénéficier de 2 mois gratuits à l'ouverture</span>
-      <span className="ml-2 underline">Rejoindre →</span>
+    <Link
+      href="/early-access"
+      className="block bg-[#0B1F4B] text-white text-center text-sm py-2.5 px-4 hover:bg-[#142d6b] transition-colors border-b border-white/5"
+    >
+      <span className="inline-flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="font-semibold">Pré-lancement Instant Rent</span>
+      </span>
+      <span className="hidden sm:inline opacity-75 mx-2">·</span>
+      <span className="hidden sm:inline opacity-75">60 jours offerts pour les premiers propriétaires inscrits</span>
+      <span className="ml-2 underline opacity-90 hover:opacity-100">Rejoindre →</span>
     </Link>
   )
 }
