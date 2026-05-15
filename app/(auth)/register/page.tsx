@@ -43,20 +43,35 @@ export default function RegisterPage() {
     }
 
     if (signUpData.user) {
-      // Vérifier si l'user était pré-inscrit en tant que propriétaire (promo 2 mois)
+      // Vérifier si l'user était pré-inscrit en tant que propriétaire (promo)
       const { data: waitlistEntry } = await supabase
         .from('waitlist')
-        .select('role')
+        .select('role, referral_code')
         .eq('email', email.trim().toLowerCase())
         .maybeSingle()
 
       const hasPromo = waitlistEntry?.role === 'owner'
+
+      // Calcul des mois offerts via le système de parrainage
+      // (2 mois base + 1 par filleul, plafond 12)
+      let launchPromoMonths: number | null = null
+      if (hasPromo && waitlistEntry?.referral_code) {
+        const { count } = await supabase
+          .from('waitlist')
+          .select('id', { count: 'exact', head: true })
+          .eq('referred_by', waitlistEntry.referral_code)
+        const referralCount = count ?? 0
+        launchPromoMonths = Math.min(2 + referralCount, 12)
+      } else if (hasPromo) {
+        launchPromoMonths = 2
+      }
 
       await supabase.from('profiles').upsert({
         id: signUpData.user.id,
         full_name: fullName,
         cgu_accepted_at: new Date().toISOString(),
         has_launch_promo: hasPromo,
+        launch_promo_months: launchPromoMonths,
       })
     }
 

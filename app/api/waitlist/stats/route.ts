@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { computePromoMonths, MAX_PROMO_MONTHS, BASE_PROMO_MONTHS } from '@/lib/referral'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const code = searchParams.get('code')
+
+  if (!code) {
+    return NextResponse.json({ error: 'Missing code' }, { status: 400 })
+  }
+
+  const codeUpper = code.trim().toUpperCase().slice(0, 12)
+
+  // Récupère le parrain
+  const { data: me, error: meError } = await supabase
+    .from('waitlist')
+    .select('id, full_name, role, created_at, referral_code')
+    .eq('referral_code', codeUpper)
+    .maybeSingle()
+
+  if (meError || !me) {
+    return NextResponse.json({ error: 'Code introuvable' }, { status: 404 })
+  }
+
+  // Position dans la queue : nombre d'inscrits avant moi (created_at antérieur ou égal)
+  const { count: positionCount } = await supabase
+    .from('waitlist')
+    .select('id', { count: 'exact', head: true })
+    .lte('created_at', me.created_at)
+
+  // Nombre total d'inscrits
+  const { count: totalCount } = await supabase
+    .from('waitlist')
+    .select('id', { count: 'exact', head: true })
+
+  // Nombre de filleuls (qui ont entré ce code comme referred_by)
+  const { count: referralsCount } = await supabase
+    .from('waitlist')
+    .select('id', { count: 'exact', head: true })
+    .eq('referred_by', codeUpper)
+
+  const referrals = referralsCount ?? 0
+  const promoMonths = computePromoMonths(referrals)
+  const maxedOut = promoMonths >= MAX_PROMO_MONTHS
+  const referralsToMax = maxedOut ? 0 : (MAX_PROMO_MONTHS - BASE_PROMO_MONTHS) - referrals
+
+  return NextResponse.json({
+    full_name: me.full_name,
+    role: me.role,
+    referral_code: me.referral_code,
+    position: positionCount ?? 0,
+    total_signups: totalCount ?? 0,
+    referrals_count: referrals,
+    promo_months: promoMonths,
+    promo_max: MAX_PROMO_MONTHS,
+    promo_base: BASE_PROMO_MONTHS,
+    referrals_to_max: referralsToMax,
+    maxed_out: maxedOut,
+  })
+}

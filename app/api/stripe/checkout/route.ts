@@ -32,14 +32,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Candidature invalide' }, { status: 400 })
   }
 
-  // Vérifier si le proprio bénéficie de la promo de lancement (2 mois gratuits)
+  // Vérifier la promo de lancement (2 à 12 mois selon parrainage waitlist)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('has_launch_promo')
+    .select('has_launch_promo, launch_promo_months')
     .eq('id', user.id)
     .single()
 
-  const trialDays = profile?.has_launch_promo ? 60 : undefined
+  let trialDays: number | undefined
+  if (profile?.has_launch_promo) {
+    const rawMonths = profile.launch_promo_months ?? 2
+    const cappedMonths = Math.min(Math.max(rawMonths, 0), 12)
+    trialDays = cappedMonths * 30
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',

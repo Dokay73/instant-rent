@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendWaitlistWelcomeEmail } from '@/lib/email'
+import { generateReferralCode } from '@/lib/referral'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+async function generateUniqueReferralCode(maxAttempts = 5): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const code = generateReferralCode()
+    const { count, error } = await supabase
+      .from('waitlist')
+      .select('id', { count: 'exact', head: true })
+      .eq('referral_code', code)
+    if (!error && count === 0) return code
+  }
+  // Fallback : code + timestamp suffix, extrêmement improbable collision
+  return generateReferralCode() + Date.now().toString(36).toUpperCase().slice(-3)
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -47,6 +61,7 @@ export async function POST(req: NextRequest) {
       role,
       hp_field,
       turnstile_token,
+      referred_by,
     } = body as Record<string, unknown>
 
     if (hp_field) {
@@ -85,13 +100,35 @@ export async function POST(req: NextRequest) {
     const cleanPropertyType =
       typeof property_type === 'string' && property_type.trim() ? property_type.trim().slice(0, 40) : null
 
-    const { error: insertError } = await supabase.from('waitlist').insert({
-      full_name: cleanName,
-      email: cleanEmail,
-      city: cleanCity,
-      property_type: cleanPropertyType,
-      role,
-    })
+    // Validation du code de parrainage : doit exister en base, sinon ignoré
+    let validReferredBy: string | null = null
+    if (typeof referred_by === 'string' && referred_by.trim()) {
+      const codeUpper = referred_by.trim().toUpperCase().slice(0, 12)
+      const { data: referrer } = await supabase
+        .from('waitlist')
+        .select('id, email')
+        .eq('referral_code', codeUpper)
+        .maybeSingle()
+      if (referrer && referrer.email !== cleanEmail) {
+        validReferredBy = codeUpper
+      }
+    }
+
+    const referralCode = await generateUniqueReferralCode()
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('waitlist')
+      .insert({
+        full_name: cleanName,
+        email: cleanEmail,
+        city: cleanCity,
+        property_type: cleanPropertyType,
+        role,
+        referral_code: referralCode,
+        referred_by: validReferredBy,
+      })
+      .select('id, referral_code')
+      .single()
 
     if (insertError) {
       if (insertError.code === '23505') {
@@ -111,7 +148,13 @@ export async function POST(req: NextRequest) {
       console.error('Waitlist welcome email failed:', err)
     )
 
-    return NextResponse.json({ ok: true }, { status: 200 })
+    return NextResponse.json(
+      {
+        ok: true,
+        referral_code: inserted?.referral_code ?? referralCode,
+      },
+      { status: 200 }
+    )
   } catch (err) {
     console.error('Waitlist route error:', err)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
