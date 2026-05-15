@@ -159,31 +159,45 @@ export async function sendDailyContentReviewEmail({
 export async function sendWaitlistWelcomeEmail({
   email,
   fullName,
+  role = 'owner',
 }: {
   email: string
   fullName: string
+  role?: 'owner' | 'tenant'
 }) {
-  const resend = getResend(); if (!resend) return; await resend.emails.send({
+  const resend = getResend(); if (!resend) return
+
+  const isOwner = role === 'owner'
+  const subject = isOwner
+    ? 'Bienvenue parmi les propriétaires pionniers Instant Rent'
+    : 'Bienvenue sur la liste d\'attente Instant Rent'
+
+  const intro = isOwner
+    ? `Merci de rejoindre les <strong>propriétaires pionniers</strong> d'Instant Rent. Vous faites partie des premiers à qui nous ouvrirons l'accès, avec une offre dédiée : <strong>60 jours d'abonnement offerts</strong> à l'ouverture publique et un accompagnement personnalisé pour publier votre premier bien.`
+    : `Merci de rejoindre la <strong>liste d'attente locataire</strong> d'Instant Rent. Vous serez parmi les premiers à découvrir les biens disponibles et à pouvoir candidater dès l'ouverture, dossier déjà prêt.`
+
+  const nextStepTitle = isOwner ? 'Que se passe-t-il maintenant ?' : 'Prochaines étapes'
+  const nextStepBody = isOwner
+    ? `Nous vous recontactons personnellement dans les prochains jours pour préparer la publication de votre bien, valider votre cas d'usage (résidence non principale, mobilité, étudiant…) et débloquer vos 60 jours offerts.`
+    : `Nous vous contactons pour préparer votre dossier locataire (pièce d'identité, justificatif de revenus, etc.) afin que vous puissiez candidater en 1 clic dès le lancement.`
+
+  await resend.emails.send({
     from: FROM,
     to: email,
-    subject: 'Bienvenue sur la liste d\'attente Instant Rent',
+    subject,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
         <div style="background: #0B1F4B; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
           <h1 style="color: white; font-size: 20px; margin: 0;">Instant<span style="color: #4A6CF7;"> Rent</span></h1>
         </div>
         <p style="color: #475569; font-size: 15px;">Bonjour ${esc(fullName)},</p>
-        <p style="color: #475569; font-size: 15px;">
-          Merci pour votre inscription à la <strong>liste d'attente Instant Rent</strong>. Vous faites désormais partie des premiers propriétaires à qui nous ouvrirons l'accès à la plateforme.
-        </p>
+        <p style="color: #475569; font-size: 15px;">${intro}</p>
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 8px; font-weight: 600; color: #0f172a;">Que se passe-t-il maintenant ?</p>
-          <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-            Nous vous contactons personnellement pour vous accompagner dans la publication de votre premier bien et bénéficier d'un accès anticipé à toutes les fonctionnalités.
-          </p>
+          <p style="margin: 0 0 8px; font-weight: 600; color: #0f172a;">${nextStepTitle}</p>
+          <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">${nextStepBody}</p>
         </div>
         <p style="color: #475569; font-size: 15px;">
-          En attendant, rejoignez notre <strong>communauté Discord beta</strong> pour échanger avec les autres propriétaires et suivre les nouveautés en avant-première :
+          En attendant, rejoignez notre <strong>communauté Discord beta</strong> pour échanger et suivre l'actualité du lancement :
         </p>
         <a href="https://discord.gg/BR8UsZJYJ"
           style="display: inline-block; background: #5865F2; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px;">

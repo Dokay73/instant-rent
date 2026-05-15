@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import PreLaunchBanner from '@/components/PreLaunchBanner'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
+import { isPreLaunch } from '@/lib/launch'
 
 const LANDLORD_BENEFITS = [
   {
@@ -54,24 +56,26 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'landlord' | 'tenant'>('landlord')
   const [city, setCity] = useState('')
   const router = useRouter()
+  const preLaunch = isPreLaunch()
 
   function handleSearch(e: React.SyntheticEvent) {
     e.preventDefault()
+    if (preLaunch) {
+      router.push('/early-access/locataire')
+      return
+    }
     router.push(`/biens${city ? `?city=${city}` : ''}`)
   }
 
   const benefits = activeTab === 'landlord' ? LANDLORD_BENEFITS : TENANT_BENEFITS
   const howItWorks = activeTab === 'landlord' ? HOW_IT_WORKS_LANDLORD : HOW_IT_WORKS_TENANT
 
+  const ownerCta = preLaunch ? '/early-access/proprietaire' : '/register'
+  const tenantCta = preLaunch ? '/early-access/locataire' : '/biens'
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Bandeau accès anticipé / pré-lancement */}
-      <Link href="/early-access"
-        className="block bg-[#4A6CF7] text-white text-center text-sm py-2.5 px-4 hover:bg-[#3a5ce5] transition-colors">
-        <span className="font-semibold">🚀 Pré-lancement ouvert</span>
-        <span className="hidden sm:inline opacity-80"> · Inscrivez-vous et bénéficiez de 2 mois gratuits à l'ouverture</span>
-        <span className="ml-2 underline">Rejoindre →</span>
-      </Link>
+      <PreLaunchBanner />
       <Navbar />
 
       {/* ── HERO ────────────────────────────────────────────── */}
@@ -97,7 +101,9 @@ export default function HomePage() {
               transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="inline-flex items-center gap-2.5 border border-white/10 bg-white/5 text-white/60 text-xs font-medium px-4 py-2 rounded-full mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4A6CF7] flex-shrink-0" />
-              Bail Code Civil · 100% en ligne · Sans durée imposée
+              {preLaunch
+                ? 'Pré-lancement Paris · 60 jours offerts aux 50 premiers proprios'
+                : 'Bail Code Civil & mobilité · 100% en ligne · 1 à 24 mois'}
             </motion.div>
 
             <motion.h1
@@ -105,8 +111,17 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.06] tracking-tight">
-              La location<br />
-              <span className="text-[#4A6CF7]">sans contrainte</span>
+              {preLaunch ? (
+                <>
+                  Louez votre bien<br />
+                  <span className="text-[#4A6CF7]">sans vous engager 3 ans</span>
+                </>
+              ) : (
+                <>
+                  La location<br />
+                  <span className="text-[#4A6CF7]">sans contrainte</span>
+                </>
+              )}
             </motion.h1>
 
             <motion.p
@@ -114,34 +129,65 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="mt-6 text-white/55 text-lg leading-relaxed max-w-lg">
-              Propriétaires, publiez votre bien. Locataires, trouvez le vôtre.
-              Flexibilité totale, zéro frais si vacant.
+              {preLaunch
+                ? 'Propriétaires d\'un bien meublé à Paris : louez en Bail Code Civil ou mobilité, de 1 à 24 mois selon votre cas d\'usage. Vous ne payez que quand votre bien est loué.'
+                : 'Propriétaires, publiez votre bien. Locataires, trouvez le vôtre. Flexibilité totale, zéro frais si vacant.'}
             </motion.p>
 
-            {/* Search bar */}
-            <motion.form
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
-              onSubmit={handleSearch} className="mt-10 flex gap-2 max-w-md">
-              <input
-                value={city}
-                onChange={e => setCity(e.target.value)}
-                type="text"
-                placeholder="Ville, quartier..."
-                className="flex-1 px-4 py-3.5 rounded-xl text-slate-900 text-sm focus:outline-none bg-white/95 placeholder:text-slate-400"
-              />
-              <button
-                type="submit"
-                className="bg-[#4A6CF7] text-white px-6 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors flex-shrink-0"
-              >
-                Rechercher
-              </button>
-            </motion.form>
+            {preLaunch && (
+              <p className="mt-3 text-xs text-white/40 max-w-lg">
+                Bail Code Civil réservé aux résidences non principales, mobilité professionnelle, étudiants en alternance.{' '}
+                <Link href="/legal/bail-code-civil" className="underline hover:text-white/70 transition-colors">
+                  Quel bail pour quel cas ?
+                </Link>
+              </p>
+            )}
 
-            <Link href="/biens" className="mt-4 inline-block text-sm text-white/40 hover:text-white/70 transition-colors">
-              Voir tous les biens disponibles →
-            </Link>
+            {preLaunch ? (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
+                className="mt-10 flex flex-wrap gap-3 items-center">
+                <Link
+                  href={ownerCta}
+                  className="bg-[#4A6CF7] text-white px-7 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors"
+                >
+                  Réserver mes 60 jours offerts →
+                </Link>
+                <Link
+                  href={tenantCta}
+                  className="text-sm text-white/50 hover:text-white/80 transition-colors px-2"
+                >
+                  Je cherche un logement
+                </Link>
+              </motion.div>
+            ) : (
+              <>
+                <motion.form
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  onSubmit={handleSearch} className="mt-10 flex gap-2 max-w-md">
+                  <input
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    type="text"
+                    placeholder="Ville, quartier..."
+                    className="flex-1 px-4 py-3.5 rounded-xl text-slate-900 text-sm focus:outline-none bg-white/95 placeholder:text-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-[#4A6CF7] text-white px-6 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors flex-shrink-0"
+                  >
+                    Rechercher
+                  </button>
+                </motion.form>
+                <Link href="/biens" className="mt-4 inline-block text-sm text-white/40 hover:text-white/70 transition-colors">
+                  Voir tous les biens disponibles →
+                </Link>
+              </>
+            )}
 
             {/* Inline stats */}
             <motion.div
@@ -151,16 +197,14 @@ export default function HomePage() {
               className="mt-12 flex items-center gap-6">
               <div>
                 <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  <AnimatedCounter value={100} suffix="%" />
+                  <AnimatedCounter value={preLaunch ? 60 : 100} suffix={preLaunch ? ' j' : '%'} />
                 </p>
-                <p className="text-xs text-white/40 mt-0.5">En ligne</p>
+                <p className="text-xs text-white/40 mt-0.5">{preLaunch ? 'Offerts à l\'ouverture' : 'En ligne'}</p>
               </div>
               <div className="w-px h-8 bg-white/10" />
               <div>
-                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  <AnimatedCounter value={23} suffix="h" />
-                </p>
-                <p className="text-xs text-white/40 mt-0.5">Délai de réponse moyen</p>
+                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>1–24</p>
+                <p className="text-xs text-white/40 mt-0.5">Mois de location</p>
               </div>
               <div className="w-px h-8 bg-white/10" />
               <div>
@@ -317,10 +361,12 @@ export default function HomePage() {
 
           <div className="mt-10 text-center">
             <Link
-              href={activeTab === 'landlord' ? '/register' : '/biens'}
+              href={activeTab === 'landlord' ? ownerCta : tenantCta}
               className="inline-flex items-center gap-2 bg-[#0B1F4B] text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
             >
-              {activeTab === 'landlord' ? 'Publier mon premier bien' : 'Trouver un logement'}
+              {preLaunch
+                ? activeTab === 'landlord' ? 'Réserver mes 60 jours offerts' : 'Préparer mon dossier locataire'
+                : activeTab === 'landlord' ? 'Publier mon premier bien' : 'Trouver un logement'}
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
@@ -368,10 +414,10 @@ export default function HomePage() {
             </div>
 
             <Link
-              href="/register"
+              href={ownerCta}
               className="mt-8 block text-center bg-[#4A6CF7] text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors relative z-10"
             >
-              Commencer gratuitement
+              {preLaunch ? 'Réserver mes 60 jours offerts' : 'Commencer gratuitement'}
             </Link>
           </div>
           </ScrollReveal>

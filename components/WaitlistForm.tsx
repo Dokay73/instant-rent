@@ -1,17 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 const PROPERTY_TYPES = ['Studio', 'T1', 'T2', 'T3', 'T4', 'T5+', 'Maison', 'Villa']
 
 export default function WaitlistForm({ role }: { role: 'owner' | 'tenant' }) {
-  const supabase = createClient()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [city, setCity] = useState('')
   const [propertyType, setPropertyType] = useState('')
+  const [hpField, setHpField] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -24,36 +23,34 @@ export default function WaitlistForm({ role }: { role: 'owner' | 'tenant' }) {
     setLoading(true)
     setError('')
 
-    const { error: insertError } = await supabase.from('waitlist').insert({
-      full_name: fullName.trim(),
-      email: email.trim().toLowerCase(),
-      city: city.trim() || null,
-      property_type: propertyType || null,
-      role,
-    })
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          city: city.trim() || null,
+          property_type: propertyType || null,
+          role,
+          hp_field: hpField,
+        }),
+      })
 
-    if (insertError) {
-      if (insertError.code === '23505') {
-        setError('Cet email est déjà inscrit sur la liste.')
-      } else {
-        setError('Une erreur est survenue, réessayez.')
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setError(data.error ?? 'Une erreur est survenue, réessayez.')
+        setLoading(false)
+        return
       }
+
+      setSuccess(true)
+    } catch {
+      setError('Impossible de joindre le serveur. Réessayez.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'waitlist_welcome',
-        email: email.trim().toLowerCase(),
-        fullName: fullName.trim(),
-      }),
-    }).catch(() => {})
-
-    setSuccess(true)
-    setLoading(false)
   }
 
   if (success) {
@@ -131,6 +128,14 @@ export default function WaitlistForm({ role }: { role: 'owner' | 'tenant' }) {
         className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 space-y-4">
         <h2 className="text-base font-semibold text-slate-900 mb-1">Rejoindre la liste d'attente</h2>
         <p className="text-sm text-slate-500 mb-4">Aucun engagement. Vous serez prévenu en priorité de l'ouverture.</p>
+
+        {/* Honeypot — invisible aux humains, attire les bots */}
+        <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
+          <label>
+            Site web
+            <input type="text" tabIndex={-1} autoComplete="off" value={hpField} onChange={e => setHpField(e.target.value)} />
+          </label>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
