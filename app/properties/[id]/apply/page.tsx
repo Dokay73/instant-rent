@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, use, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
 const REQUIRED_DOCS = [
-  { key: 'id_card', label: "Pièce d'identité", accept: '.pdf,.jpg,.jpeg,.png' },
-  { key: 'work_contract', label: 'Contrat de travail', accept: '.pdf,.jpg,.jpeg,.png' },
-  { key: 'proof_of_address', label: 'Justificatif de domicile principal', accept: '.pdf,.jpg,.jpeg,.png' },
-]
+  { key: 'id_card', profile_field: 'id_card_url', label: "Pièce d'identité", accept: '.pdf,.jpg,.jpeg,.png' },
+  { key: 'work_contract', profile_field: 'work_contract_url', label: 'Contrat de travail', accept: '.pdf,.jpg,.jpeg,.png' },
+  { key: 'proof_of_address', profile_field: 'proof_of_address_url', label: 'Justificatif de domicile principal', accept: '.pdf,.jpg,.jpeg,.png' },
+] as const
 
 export default function ApplyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -25,25 +25,54 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
   const [durations, setDurations] = useState<number[]>([])
   const [loaded, setLoaded] = useState(false)
 
-  if (!loaded) {
-    setLoaded(true)
-    supabase
-      .from('properties')
-      .select('allowed_durations')
-      .eq('id', id)
-      .single()
-      .then(({ data }) => {
-        if (data) setDurations(data.allowed_durations)
-      })
-  }
+  // Dossier centralisé du locataire
+  const [dossier, setDossier] = useState<Record<string, string | null>>({
+    id_card_url: null,
+    work_contract_url: null,
+    proof_of_address_url: null,
+  })
 
-  const docsCount = REQUIRED_DOCS.filter(d => files[d.key]).length
-  const allDocsUploaded = docsCount === REQUIRED_DOCS.length
+  useEffect(() => {
+    async function load() {
+      const { data: prop } = await supabase
+        .from('properties')
+        .select('allowed_durations')
+        .eq('id', id)
+        .single()
+      if (prop) setDurations(prop.allowed_durations)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id_card_url, work_contract_url, proof_of_address_url')
+          .eq('id', user.id)
+          .single()
+        if (profile) {
+          setDossier({
+            id_card_url: profile.id_card_url ?? null,
+            work_contract_url: profile.work_contract_url ?? null,
+            proof_of_address_url: profile.proof_of_address_url ?? null,
+          })
+        }
+      }
+      setLoaded(true)
+    }
+    load()
+  }, [id])
+
+  const dossierComplete = REQUIRED_DOCS.every(d => dossier[d.profile_field])
+  const dossierCount = REQUIRED_DOCS.filter(d => dossier[d.profile_field]).length
+
+  // Pour les docs où le dossier ne fournit rien, on attend un upload
+  const missingDocs = REQUIRED_DOCS.filter(d => !dossier[d.profile_field])
+  const uploadedMissingCount = missingDocs.filter(d => files[d.key]).length
+  const allDocsReady = dossierCount + uploadedMissingCount === REQUIRED_DOCS.length
 
   async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault()
     if (!duration) return setError('Veuillez sélectionner une durée')
-    if (!allDocsUploaded) return setError('Tous les documents sont obligatoires')
+    if (!allDocsReady) return setError('Tous les documents sont requis')
 
     setUploading(true)
     setError('')
@@ -58,22 +87,30 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
     const docsUrls: Record<string, string> = {}
 
     for (const doc of REQUIRED_DOCS) {
-      const file = files[doc.key]
-      const ext = file.name.split('.').pop()
-      const path = `${user.id}/${id}/${doc.key}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(path, file, { upsert: true })
-
-      if (uploadError) {
-        setError(`Erreur upload : ${doc.label}`)
-        setUploading(false)
-        return
+      const dossierPath = dossier[doc.profile_field]
+      if (dossierPath) {
+        // Réutilise le doc du dossier locataire
+        docsUrls[doc.key] = dossierPath
+      } else {
+        // Upload one-off pour cette candidature uniquement
+        const file = files[doc.key]
+        if (!file) {
+          setError(`Document manquant : ${doc.label}`)
+          setUploading(false)
+          return
+        }
+        const ext = file.name.split('.').pop()
+        const path = `${user.id}/${id}/${doc.key}.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(path, file, { upsert: true })
+        if (uploadError) {
+          setError(`Erreur upload : ${doc.label}`)
+          setUploading(false)
+          return
+        }
+        docsUrls[doc.key] = path
       }
-
-      // Stockage du path uniquement — accès via /api/get-doc avec signed URL
-      docsUrls[doc.key] = path
     }
 
     const { data: newApp, error: appError } = await supabase.from('applications').insert({
@@ -91,7 +128,6 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
       return
     }
 
-    // Notifier le propriétaire
     if (newApp?.id) {
       fetch('/api/notify', {
         method: 'POST',
@@ -101,6 +137,19 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
     }
 
     router.push(`/properties/${id}/apply/success`)
+  }
+
+  if (!loaded) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-xl mx-auto px-4 py-10 space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 h-32 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -116,9 +165,60 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
         </Link>
 
         <h1 className="text-2xl font-bold text-slate-900">Déposer ma candidature</h1>
-        <p className="text-slate-500 mt-1 text-sm">Complétez les informations pour soumettre votre dossier</p>
+        <p className="text-slate-500 mt-1 text-sm">
+          {dossierComplete
+            ? 'Votre dossier est prêt — candidatez en quelques secondes'
+            : 'Complétez les informations pour soumettre votre dossier'}
+        </p>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        {/* Bandeau dossier */}
+        <div className={`mt-6 rounded-2xl p-5 ${
+          dossierComplete
+            ? 'bg-green-50 border border-green-100'
+            : 'bg-amber-50 border border-amber-100'
+        }`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                dossierComplete ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+              }`}>
+                {dossierComplete ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                ) : (
+                  <span className="text-base font-bold">!</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className={`text-sm font-semibold ${
+                  dossierComplete ? 'text-green-900' : 'text-amber-900'
+                }`}>
+                  {dossierComplete
+                    ? 'Dossier locataire complet'
+                    : `Dossier locataire incomplet (${dossierCount}/3 documents)`}
+                </p>
+                <p className={`text-xs mt-0.5 leading-relaxed ${
+                  dossierComplete ? 'text-green-700' : 'text-amber-700'
+                }`}>
+                  {dossierComplete
+                    ? 'Vos pièces seront transmises automatiquement au propriétaire.'
+                    : 'Préparez votre dossier une fois pour candidater en 1 clic à toutes vos prochaines locations.'}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/profil/dossier-locataire"
+              className={`flex-shrink-0 text-xs font-semibold whitespace-nowrap hover:underline ${
+                dossierComplete ? 'text-green-700' : 'text-amber-800'
+              }`}
+            >
+              {dossierComplete ? 'Mettre à jour →' : 'Compléter mon dossier →'}
+            </Link>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
 
           {/* Durée */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
@@ -149,45 +249,55 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
             )}
           </div>
 
-          {/* Documents */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-900">Documents obligatoires</h2>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                allDocsUploaded ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
-              }`}>
-                {docsCount}/{REQUIRED_DOCS.length}
-              </span>
-            </div>
+          {/* Documents manquants — upload one-off */}
+          {missingDocs.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-slate-900">Documents à fournir</h2>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                  uploadedMissingCount === missingDocs.length ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {uploadedMissingCount}/{missingDocs.length}
+                </span>
+              </div>
 
-            {REQUIRED_DOCS.map(doc => (
-              <div key={doc.key} className="border border-slate-100 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">{doc.label}</label>
+              {missingDocs.map(doc => (
+                <div key={doc.key} className="border border-slate-100 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-slate-700">{doc.label}</label>
+                    {files[doc.key] && (
+                      <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        Ajouté
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept={doc.accept}
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (file) setFiles(prev => ({ ...prev, [doc.key]: file }))
+                    }}
+                    className="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer"
+                  />
                   {files[doc.key] && (
-                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                      Ajouté
-                    </span>
+                    <p className="text-xs text-slate-400 mt-1.5 truncate">{files[doc.key].name}</p>
                   )}
                 </div>
-                <input
-                  type="file"
-                  accept={doc.accept}
-                  onChange={e => {
-                    const file = e.target.files?.[0]
-                    if (file) setFiles(prev => ({ ...prev, [doc.key]: file }))
-                  }}
-                  className="w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer"
-                />
-                {files[doc.key] && (
-                  <p className="text-xs text-slate-400 mt-1.5 truncate">{files[doc.key].name}</p>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Ces documents seront uploadés pour cette candidature uniquement.{' '}
+                <Link href="/profil/dossier-locataire" className="text-[#4A6CF7] hover:underline">
+                  Compléter mon dossier locataire
+                </Link>{' '}
+                pour les conserver pour vos prochaines candidatures.
+              </p>
+            </div>
+          )}
 
           {/* Message */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
@@ -210,10 +320,14 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
 
           <button
             type="submit"
-            disabled={uploading || !allDocsUploaded || !duration}
+            disabled={uploading || !allDocsReady || !duration}
             className="w-full bg-[#0B1F4B] text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] disabled:opacity-50 transition-colors"
           >
-            {uploading ? 'Envoi en cours...' : 'Envoyer ma candidature'}
+            {uploading
+              ? 'Envoi en cours...'
+              : dossierComplete
+                ? 'Candidater en 1 clic'
+                : 'Envoyer ma candidature'}
           </button>
 
           <p className="text-center text-xs text-slate-400">

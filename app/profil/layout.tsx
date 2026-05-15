@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 
 const MENU = [
   { label: 'Mon profil', href: '/profil', icon: '◉' },
+  { label: 'Dossier locataire', href: '/profil/dossier-locataire', icon: '◍' },
   { label: 'Mot de passe', href: '/profil/mot-de-passe', icon: '◈' },
   { label: 'Notifications', href: '/profil/notifications', icon: '◎' },
   { label: 'Vérification', href: '/profil/verification', icon: '◇' },
