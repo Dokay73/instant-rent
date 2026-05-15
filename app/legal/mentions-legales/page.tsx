@@ -16,7 +16,7 @@ export default function MentionsLegalesPage() {
         <li>Code APE : 6312Z (Portails Internet)</li>
         <li>TVA non applicable, article 293 B du CGI</li>
         <li>Directeur de la publication : Hakan Gunduz</li>
-        <li>Email de contact : <a href="mailto:hakangdz@outlook.fr" className="text-[#4A6CF7] hover:underline">hakangdz@outlook.fr</a></li>
+        <li>Email de contact : <a href="mailto:support@instant-rent.fr" className="text-[#4A6CF7] hover:underline">support@instant-rent.fr</a></li>
       </ul>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">Hébergement</h2>
@@ -37,12 +37,12 @@ export default function MentionsLegalesPage() {
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">Médiation de la consommation</h2>
       <p className="text-sm leading-relaxed">
-        Conformément aux articles L.611-1 et suivants du Code de la consommation, en cas de litige, le consommateur peut recourir gratuitement au service de médiation de la consommation. Pour toute réclamation, contactez-nous à <a href="mailto:hakangdz@outlook.fr" className="text-[#4A6CF7] hover:underline">hakangdz@outlook.fr</a>.
+        Conformément aux articles L.611-1 et suivants du Code de la consommation, en cas de litige, le consommateur peut recourir gratuitement au service de médiation de la consommation. Pour toute réclamation, contactez-nous à <a href="mailto:support@instant-rent.fr" className="text-[#4A6CF7] hover:underline">support@instant-rent.fr</a>.
       </p>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">Contact</h2>
       <p className="text-sm leading-relaxed">
-        Pour toute question concernant ces mentions légales, contactez-nous à <a href="mailto:hakangdz@outlook.fr" className="text-[#4A6CF7] hover:underline">hakangdz@outlook.fr</a>.
+        Pour toute question concernant ces mentions légales, contactez-nous à <a href="mailto:support@instant-rent.fr" className="text-[#4A6CF7] hover:underline">support@instant-rent.fr</a>.
       </p>
     </>
   )

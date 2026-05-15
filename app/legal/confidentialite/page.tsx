@@ -62,7 +62,7 @@ export default function ConfidentialitePage() {
         <li>Droit d'introduire une réclamation auprès de la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-[#4A6CF7] hover:underline">www.cnil.fr</a>)</li>
       </ul>
       <p className="text-sm leading-relaxed mt-3">
-        Pour exercer ces droits, contactez-nous à <a href="mailto:hakangdz@outlook.fr" className="text-[#4A6CF7] hover:underline">hakangdz@outlook.fr</a>.
+        Pour exercer ces droits, contactez-nous à <a href="mailto:support@instant-rent.fr" className="text-[#4A6CF7] hover:underline">support@instant-rent.fr</a>.
       </p>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">8. Cookies</h2>

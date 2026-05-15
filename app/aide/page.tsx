@@ -183,7 +183,7 @@ export default function AidePage() {
         {filtered.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
             <p className="text-sm text-slate-500 mb-3">Aucune réponse trouvée pour "{search}"</p>
-            <a href="mailto:hakangdz@outlook.fr" className="text-sm text-[#4A6CF7] hover:underline">
+            <a href="mailto:support@instant-rent.fr" className="text-sm text-[#4A6CF7] hover:underline">
               Contactez-nous directement →
             </a>
           </div>
@@ -233,7 +233,7 @@ export default function AidePage() {
               className="bg-[#5865F2] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#4752c4] transition-colors">
               Rejoindre le Discord
             </a>
-            <a href="mailto:hakangdz@outlook.fr"
+            <a href="mailto:support@instant-rent.fr"
               className="bg-white text-[#0B1F4B] px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-colors">
               Nous écrire
             </a>
