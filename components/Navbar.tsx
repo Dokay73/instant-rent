@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
+import { isPreLaunch } from '@/lib/launch'
 
 export default function Navbar() {
+  const preLaunch = isPreLaunch()
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [profile, setProfile] = useState<{ full_name?: string } | null>(null)
   const [open, setOpen] = useState(false)
@@ -51,10 +53,12 @@ export default function Navbar() {
           <img src="/logo/logo-white.png" alt="Instant Rent" className="h-40 w-auto -my-10" />
         </Link>
 
-        <nav className="flex items-center gap-6">
-          <Link href="/biens" className="text-sm text-white/60 hover:text-white transition-colors">
-            Biens disponibles
-          </Link>
+        <nav className="flex items-center gap-3 sm:gap-6">
+          {!preLaunch && (
+            <Link href="/biens" className="text-sm text-white/60 hover:text-white transition-colors">
+              Biens disponibles
+            </Link>
+          )}
 
           {user ? (
             <div className="relative" ref={dropdownRef}>
@@ -120,10 +124,10 @@ export default function Navbar() {
                 Connexion
               </Link>
               <Link
-                href="/register"
-                className="text-sm bg-[#4A6CF7] text-white px-4 py-2 rounded-lg hover:bg-[#3a5ce5] transition-colors font-medium"
+                href={preLaunch ? '/early-access' : '/register'}
+                className="text-sm bg-[#4A6CF7] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#3a5ce5] transition-colors font-medium whitespace-nowrap"
               >
-                S&apos;inscrire
+                {preLaunch ? 'Liste d’attente' : 'S’inscrire'}
               </Link>
             </>
           )}

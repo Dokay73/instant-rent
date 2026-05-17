@@ -10,7 +10,7 @@ export default function BailCodeCivilPage() {
   return (
     <>
       <p className="text-xs font-semibold uppercase tracking-widest text-[#4A6CF7] mb-2">Guide pratique</p>
-      <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Bail Code Civil : pour qui, pour quoi ?</h1>
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-2 break-words">Bail Code Civil :<br className="sm:hidden" /> pour qui, pour quoi ?</h1>
       <p className="text-sm text-slate-400 mb-8">
         Le Bail Code Civil est un outil puissant — mais réservé à des cas d'usage précis. Cette page vous aide à savoir si votre projet
         de location peut l'utiliser, ou s'il faut opter pour un bail loi 1989 ou un bail mobilité.

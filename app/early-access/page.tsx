@@ -4,9 +4,9 @@ export default function EarlyAccessHubPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-[#0B1F4B] border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-4 h-20 flex items-center">
+        <div className="max-w-6xl mx-auto px-4 h-16 sm:h-20 flex items-center">
           <Link href="/" className="block overflow-visible">
-            <img src="/logo/logo-white.png" alt="Instant Rent" className="h-40 w-auto -my-10" />
+            <img src="/logo/logo-white.png" alt="Instant Rent" className="h-16 sm:h-40 w-auto sm:-my-10" />
           </Link>
         </div>
       </header>
@@ -14,7 +14,7 @@ export default function EarlyAccessHubPage() {
       <div className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <span className="inline-block text-xs font-semibold text-[#4A6CF7] uppercase tracking-widest mb-3">
-            Accès anticipé · 2 mois gratuits offerts
+            Accès anticipé · jusqu'à 12 mois offerts
           </span>
           <h1 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4 leading-tight">
             Rejoignez Instant Rent<br />
@@ -38,7 +38,11 @@ export default function EarlyAccessHubPage() {
               Préparez votre annonce dès maintenant. Au lancement, votre bien sera publié en priorité.
             </p>
             <div className="space-y-2 mb-6">
-              {['Préparer votre annonce avant l\'ouverture', '2 mois d\'abonnement offerts', 'Accompagnement personnalisé'].map(b => (
+              {[
+                'Préparer votre annonce avant l\'ouverture',
+                'Jusqu\'à 12 mois offerts en parrainant',
+                'Accompagnement personnalisé',
+              ].map(b => (
                 <p key={b} className="flex items-center gap-2 text-xs text-slate-600">
                   <span className="text-[#4A6CF7] font-bold">✓</span> {b}
                 </p>
