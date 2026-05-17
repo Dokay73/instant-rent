@@ -1,8 +1,8 @@
 import { Resend } from 'resend'
 
-// FROM provisoire — domaine sandbox Resend (envoi limité à l'email du compte Resend)
-// Une fois le domaine vérifié, repasser à 'noreply@instant-rent.fr'
-const FROM = 'Instant Rent <onboarding@resend.dev>'
+// FROM par défaut : domaine instant-rent.fr (validé dans Resend).
+// Fallback sandbox si var d'env EMAIL_FROM non définie (utile en dev).
+const FROM = process.env.EMAIL_FROM ?? 'Instant Rent <noreply@instant-rent.fr>'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
