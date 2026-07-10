@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import BailTemplate from '@/lib/pdf/BailTemplate'
-import { createElement } from 'react'
 
-// Rendu PDF + 5 appels Yousign séquentiels : le timeout Vercel par défaut (10s) est trop court
+// 5 appels réseau séquentiels à Yousign : le timeout Vercel par défaut (10s) est trop court
 export const maxDuration = 60
 
 const YOUSIGN_API_URL = process.env.YOUSIGN_API_URL!
@@ -35,9 +32,29 @@ async function yousign(path: string, options: RequestInit = {}) {
 
 function splitName(full: string) {
   const parts = (full || '').trim().split(/\s+/)
-  const first = parts[0] || 'Utilisateur'
-  const last = parts.slice(1).join(' ') || 'Instant Rent'
+  const first = parts[0] || 'Signataire'
+  // Ne jamais fabriquer un nom fictif : à défaut, réutiliser le prénom
+  const last = parts.slice(1).join(' ') || first
   return { first, last }
+}
+
+// Normalise un numéro mobile FR en E.164 (+33...) pour l'OTP SMS Yousign
+function normalizePhone(raw?: string | null): string | null {
+  if (!raw) return null
+  const digits = raw.replace(/[\s.\-()]/g, '')
+  if (/^\+33[67]\d{8}$/.test(digits)) return digits
+  if (/^0[67]\d{8}$/.test(digits)) return `+33${digits.slice(1)}`
+  if (/^33[67]\d{8}$/.test(digits)) return `+${digits}`
+  return null
+}
+
+// Positions des champs de signature sur la PAGE DE SIGNATURE dédiée du template v2
+// (lib/pdf/BailTemplate.tsx — dernière page du contrat, avant les annexes fusionnées).
+// Le numéro de cette page est persisté par generate-bail dans contracts.signature_page.
+// Yousign : origine en haut à gauche, unités en points PDF.
+const SIGNATURE_FIELDS = {
+  landlord: { x: 55, y: 175, width: 200, height: 60 },
+  tenant: { x: 330, y: 175, width: 200, height: 60 },
 }
 
 export async function POST(req: NextRequest) {
@@ -64,6 +81,38 @@ export async function POST(req: NextRequest) {
     if (property.owner_id !== user.id) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
+
+    // ── Génération unique (MISSION LEGAL-001 R5) : le document envoyé en signature
+    // EST le fichier généré et prévisualisé — on ne régénère jamais ici ──
+    const { data: contract } = await supabaseAdmin
+      .from('contracts')
+      .select('pdf_url, signature_status, signature_page, yousign_procedure_id')
+      .eq('application_id', applicationId)
+      .single()
+
+    if (!contract?.pdf_url || !contract?.signature_page) {
+      return NextResponse.json(
+        { error: 'Générez et vérifiez d\'abord le bail (aperçu PDF) avant de l\'envoyer en signature' },
+        { status: 400 }
+      )
+    }
+    if (contract.yousign_procedure_id && !['declined', 'expired'].includes(contract.signature_status)) {
+      return NextResponse.json(
+        { error: 'Une demande de signature est déjà en cours pour ce bail' },
+        { status: 409 }
+      )
+    }
+
+    const { data: pdfBlob, error: dlError } = await supabaseAdmin.storage
+      .from('documents')
+      .download(contract.pdf_url)
+    if (dlError || !pdfBlob) {
+      return NextResponse.json({ error: 'PDF du bail introuvable — régénérez le bail' }, { status: 400 })
+    }
+    const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer())
+    const signaturePage = contract.signature_page
+
+    // ── Coordonnées des signataires ──
     const { data: ownerAuth } = await supabaseAdmin.auth.admin.getUserById(property.owner_id)
     const { data: tenantAuth } = await supabaseAdmin.auth.admin.getUserById(application.tenant_id)
 
@@ -71,71 +120,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Emails manquants' }, { status: 400 })
     }
 
-    // Génération PDF
-    const startDate = new Date()
-    const endDate = new Date(startDate)
-    endDate.setMonth(endDate.getMonth() + application.duration_selected)
-    const formatDate = (d: Date) => d.toLocaleDateString('fr-FR')
-
-    const lp = property.profiles
-    const tp = application.profiles
-
-    const landlordPersonalAddress = [
-      lp?.street_address, lp?.postal_code, lp?.address_city,
-    ].filter(Boolean).join(', ') || `${property.address}, ${property.city}`
-
-    const propertyDescription = [
-      property.property_type,
-      property.surface ? `${property.surface} m²` : null,
-      property.rooms ? `${property.rooms} pièce${property.rooms > 1 ? 's' : ''}` : null,
-      property.furnished ? 'meublé' : 'non meublé',
-    ].filter(Boolean).join(' · ')
-
-    const bailData = {
-      landlordName: lp?.full_name ?? 'Bailleur',
-      landlordAddress: landlordPersonalAddress,
-      landlordBirthDate: lp?.birth_date ?? null,
-      landlordType: lp?.landlord_type ?? 'particulier',
-      tenantName: tp?.full_name ?? 'Locataire',
-      tenantBirthDate: tp?.birth_date ?? null,
-      tenantCurrentAddress: [tp?.street_address, tp?.postal_code, tp?.address_city].filter(Boolean).join(', ') || null,
-      propertyAddress: `${property.address}, ${property.city}`,
-      propertyType: property.property_type ?? null,
-      propertyDescription,
-      propertySurface: property.surface ? String(property.surface) : '',
-      propertyRooms: property.rooms ?? null,
-      propertyFurnished: property.furnished ?? true,
-      equipments: property.equipments ?? [],
-      petsAllowed: property.pets_allowed ?? false,
-      smokingAllowed: property.smoking_allowed ?? false,
-      handicapAccessible: property.handicap_accessible ?? false,
-      rentHc: property.rent_hc,
-      chargesAmount: property.charges,
-      rentTotal: property.rent_hc + property.charges,
-      chargesMode: property.charges_mode ?? 'provisions',
-      chargesIncluded: property.charges_included ?? [],
-      prestations: property.prestations ?? null,
-      deposit: property.deposit,
-      depositPaymentMethods: property.deposit_payment_methods ?? [],
-      minIncome: property.criteria_min_income ?? null,
-      zoneTendue: property.zone_tendue ?? null,
-      dpeClass: property.dpe_class ?? null,
-      dpeDate: property.dpe_date ?? null,
-      dpeEnergyValue: property.dpe_energy_value ?? null,
-      dpeGesClass: property.dpe_ges_class ?? null,
-      dpeGesValue: property.dpe_ges_value ?? null,
-      durationMonths: application.duration_selected,
-      startDate: formatDate(startDate),
-      endDate: formatDate(endDate),
-      signatureCity: property.city,
-      signatureDate: formatDate(new Date()),
-      noticedays: property.notice_days ?? 30,
+    // OTP SMS (MISSION LEGAL-001 D5) : mobile requis pour les deux parties
+    const ownerPhone = normalizePhone(property.profiles?.phone)
+    const tenantPhone = normalizePhone(application.profiles?.phone)
+    const missingPhones: string[] = []
+    if (!ownerPhone) missingPhones.push('propriétaire')
+    if (!tenantPhone) missingPhones.push('locataire')
+    if (missingPhones.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Numéro de mobile français manquant ou invalide (${missingPhones.join(' et ')}) — requis pour la signature sécurisée par code SMS. À renseigner dans le profil.`,
+        },
+        { status: 422 }
+      )
     }
 
-    const pdfBuffer = await renderToBuffer(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      createElement(BailTemplate, { data: bailData }) as any
-    )
+    const owner = splitName(property.profiles.full_name)
+    const tenant = splitName(application.profiles.full_name)
 
     // 1. Créer la signature request
     const sigReq = await yousign('/signature_requests', {
@@ -147,9 +148,9 @@ export async function POST(req: NextRequest) {
       }),
     })
 
-    // 2. Upload du document
+    // 2. Upload du document (le fichier stocké, tel quel)
     const formData = new FormData()
-    formData.append('file', new Blob([new Uint8Array(pdfBuffer)], { type: 'application/pdf' }), 'bail.pdf')
+    formData.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'bail.pdf')
     formData.append('nature', 'signable_document')
     formData.append('parse_anchors', 'false')
 
@@ -158,10 +159,7 @@ export async function POST(req: NextRequest) {
       body: formData,
     })
 
-    // 3. Ajouter les deux signataires avec champs de signature
-    const owner = splitName(property.profiles.full_name)
-    const tenant = splitName(application.profiles.full_name)
-
+    // 3. Ajouter les deux signataires — OTP SMS, champs sur la page de signature
     await yousign(`/signature_requests/${sigReq.id}/signers`, {
       method: 'POST',
       body: JSON.stringify({
@@ -169,18 +167,16 @@ export async function POST(req: NextRequest) {
           first_name: owner.first,
           last_name: owner.last,
           email: ownerAuth.user.email,
+          phone_number: ownerPhone,
           locale: 'fr',
         },
         signature_level: 'electronic_signature',
-        signature_authentication_mode: 'no_otp',
+        signature_authentication_mode: 'otp_sms',
         fields: [{
           document_id: doc.id,
           type: 'signature',
-          page: 1,
-          x: 80,
-          y: 700,
-          width: 150,
-          height: 50,
+          page: signaturePage,
+          ...SIGNATURE_FIELDS.landlord,
         }],
       }),
     })
@@ -192,18 +188,16 @@ export async function POST(req: NextRequest) {
           first_name: tenant.first,
           last_name: tenant.last,
           email: tenantAuth.user.email,
+          phone_number: tenantPhone,
           locale: 'fr',
         },
         signature_level: 'electronic_signature',
-        signature_authentication_mode: 'no_otp',
+        signature_authentication_mode: 'otp_sms',
         fields: [{
           document_id: doc.id,
           type: 'signature',
-          page: 1,
-          x: 350,
-          y: 700,
-          width: 150,
-          height: 50,
+          page: signaturePage,
+          ...SIGNATURE_FIELDS.tenant,
         }],
       }),
     })
@@ -223,8 +217,9 @@ export async function POST(req: NextRequest) {
       .eq('application_id', applicationId)
 
     return NextResponse.json({ ok: true, procedureId: sigReq.id })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Sign bail error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    const message = err instanceof Error ? err.message : 'Erreur inconnue'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
