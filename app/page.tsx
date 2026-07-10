@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import PreLaunchBanner from '@/components/PreLaunchBanner'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'motion/react'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
+import AnimatedBackground from '@/components/ui/AnimatedBackground'
+import Reveal, { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { isPreLaunch } from '@/lib/launch'
 
 const LANDLORD_BENEFITS = [
@@ -79,17 +82,9 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── HERO ────────────────────────────────────────────── */}
-      <section className="bg-[#0B1F4B] text-white py-20 px-4 relative overflow-hidden" style={{ minHeight: '82dvh', display: 'flex', alignItems: 'center' }}>
-        {/* Dot grid texture */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
-          }}
-        />
-        {/* Ambient glow bottom-right */}
-        <div className="absolute bottom-[-60px] right-[-60px] w-[480px] h-[480px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(74,108,247,0.12) 0%, transparent 70%)' }} />
+      <section className="bg-brand-navy text-white py-20 px-4 relative overflow-hidden" style={{ minHeight: '82dvh', display: 'flex', alignItems: 'center' }}>
+        {/* Fond aurora animé — GPU-only, fallback statique si reduced-motion */}
+        <AnimatedBackground variant="hero" />
 
         <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 lg:gap-20 items-center relative z-10">
 
@@ -100,7 +95,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="inline-flex items-center gap-2.5 border border-white/10 bg-white/5 text-white/60 text-xs font-medium px-4 py-2 rounded-full mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4A6CF7] flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-blue flex-shrink-0" />
               {preLaunch
                 ? 'Pré-lancement Paris · 60 jours offerts aux 50 premiers proprios'
                 : 'Bail Code Civil & mobilité · 100% en ligne · 1 à 24 mois'}
@@ -114,12 +109,12 @@ export default function HomePage() {
               {preLaunch ? (
                 <>
                   Louez votre bien<br />
-                  <span className="text-[#4A6CF7]">sans vous engager 3 ans</span>
+                  <span className="text-brand-blue">sans vous engager 3 ans</span>
                 </>
               ) : (
                 <>
                   La location<br />
-                  <span className="text-[#4A6CF7]">sans contrainte</span>
+                  <span className="text-brand-blue">sans contrainte</span>
                 </>
               )}
             </motion.h1>
@@ -151,7 +146,7 @@ export default function HomePage() {
                 className="mt-10 flex flex-wrap gap-3 items-center">
                 <Link
                   href={ownerCta}
-                  className="bg-[#4A6CF7] text-white px-7 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors"
+                  className="bg-brand-blue text-white px-7 py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors"
                 >
                   Réserver mes 60 jours offerts →
                 </Link>
@@ -178,7 +173,7 @@ export default function HomePage() {
                   />
                   <button
                     type="submit"
-                    className="bg-[#4A6CF7] text-white px-6 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors flex-shrink-0"
+                    className="bg-brand-blue text-white px-6 py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors flex-shrink-0"
                   >
                     Rechercher
                   </button>
@@ -223,14 +218,19 @@ export default function HomePage() {
               transition={{ duration: 0.7, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
               whileHover={{ y: -4 }}
               className="bg-white rounded-2xl p-5 shadow-2xl cursor-pointer" style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.45)' }}>
-              {/* Property image placeholder */}
-              <div className="rounded-xl h-36 mb-4 relative overflow-hidden flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #1a3575 0%, #0B1F4B 100%)' }}>
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" className="opacity-15">
-                  <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z" fill="white" />
-                  <rect x="9" y="13" width="6" height="8" fill="white" />
-                </svg>
-                <span className="absolute top-3 left-3 bg-[#4A6CF7] text-white text-xs px-2.5 py-1 rounded-lg font-medium">
+              {/* Property photo */}
+              <div className="rounded-xl h-36 mb-4 relative overflow-hidden bg-brand-navy">
+                <Image
+                  src="/hero/listing-apartment.jpg"
+                  alt="Appartement meublé parisien : séjour lumineux avec parquet en point de Hongrie"
+                  fill
+                  sizes="(min-width: 1024px) 400px, 1px"
+                  className="object-cover"
+                  preload
+                />
+                {/* Scrim : lisibilité du badge en haut + assise visuelle en bas */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/30" />
+                <span className="absolute top-3 left-3 bg-brand-blue text-white text-xs px-2.5 py-1 rounded-lg font-medium">
                   Disponible
                 </span>
               </div>
@@ -255,7 +255,7 @@ export default function HomePage() {
               whileHover={{ x: 4 }}
               className="bg-white rounded-xl p-4 ml-8 border border-slate-100" style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.3)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#0B1F4B] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   ML
                 </div>
                 <div className="flex-1 min-w-0">
@@ -288,7 +288,7 @@ export default function HomePage() {
                 onClick={() => setActiveTab('landlord')}
                 className={`text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
                   activeTab === 'landlord'
-                    ? 'bg-[#0B1F4B] text-white border-[#0B1F4B]'
+                    ? 'bg-brand-navy text-white border-brand-navy'
                     : 'text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
                 }`}
               >
@@ -298,7 +298,7 @@ export default function HomePage() {
                 onClick={() => setActiveTab('tenant')}
                 className={`text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
                   activeTab === 'tenant'
-                    ? 'bg-[#0B1F4B] text-white border-[#0B1F4B]'
+                    ? 'bg-brand-navy text-white border-brand-navy'
                     : 'text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
                 }`}
               >
@@ -343,10 +343,10 @@ export default function HomePage() {
             </h2>
           </div>
 
-          {/* Steps grid with dividers */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-200 rounded-2xl overflow-hidden">
-            {howItWorks.map((item, i) => (
-              <ScrollReveal key={item.step} direction="up" delay={i * 0.12} className="bg-slate-50 p-10">
+          {/* Steps grid with dividers — stagger orchestré via RevealGroup */}
+          <RevealGroup className="grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-200 rounded-2xl overflow-hidden">
+            {howItWorks.map(item => (
+              <RevealItem key={item.step} className="bg-slate-50 p-10">
                 <p
                   className="text-6xl font-bold leading-none"
                   style={{ color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}
@@ -355,14 +355,14 @@ export default function HomePage() {
                 </p>
                 <h3 className="font-semibold text-slate-900 mt-5 text-lg">{item.title}</h3>
                 <p className="text-slate-500 mt-2 leading-relaxed text-sm">{item.desc}</p>
-              </ScrollReveal>
+              </RevealItem>
             ))}
-          </div>
+          </RevealGroup>
 
           <div className="mt-10 text-center">
             <Link
               href={activeTab === 'landlord' ? ownerCta : tenantCta}
-              className="inline-flex items-center gap-2 bg-[#0B1F4B] text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
+              className="inline-flex items-center gap-2 bg-brand-navy text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
             >
               {preLaunch
                 ? activeTab === 'landlord' ? 'Réserver mes 60 jours offerts' : 'Préparer mon dossier locataire'
@@ -383,8 +383,8 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Simple et transparent</h2>
           </div>
 
-          <ScrollReveal>
-          <div className="bg-[#0B1F4B] text-white rounded-2xl p-10 relative overflow-hidden">
+          <Reveal>
+          <div className="bg-brand-navy text-white rounded-2xl p-10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(74,108,247,0.15) 0%, transparent 65%)' }} />
 
             <p className="text-xs text-white/40 uppercase tracking-widest mb-2 relative z-10">Par bien loué</p>
@@ -407,7 +407,9 @@ export default function HomePage() {
                 'Sans engagement',
               ].map(f => (
                 <div key={f} className="flex items-center gap-2 text-white/65">
-                  <span className="text-[#4A6CF7] font-bold flex-shrink-0">✓</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brand-blue flex-shrink-0" aria-hidden>
+                    <path d="M4 12.5l5.5 5.5L20 6.5" />
+                  </svg>
                   {f}
                 </div>
               ))}
@@ -415,12 +417,12 @@ export default function HomePage() {
 
             <Link
               href={ownerCta}
-              className="mt-8 block text-center bg-[#4A6CF7] text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-[#3a5ce5] transition-colors relative z-10"
+              className="mt-8 block text-center bg-brand-blue text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors relative z-10"
             >
               {preLaunch ? 'Réserver mes 60 jours offerts' : 'Commencer gratuitement'}
             </Link>
           </div>
-          </ScrollReveal>
+          </Reveal>
         </div>
       </section>
 

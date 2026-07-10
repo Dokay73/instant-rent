@@ -42,3 +42,9 @@ next-env.d.ts
 
 # Mobile audit screenshots
 /screenshots-mobile
+.env.e2e
+e2e-bot.mjs
+
+# python caches
+**/__pycache__/
+*.pyc

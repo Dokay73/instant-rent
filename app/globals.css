@@ -48,6 +48,36 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ── Instant Rent — brand tokens & motion (voir data/knowledge/ui-ux/design-spine.md) ──
+   Additions uniquement : aucun token shadcn existant n'est modifié.                     */
+@theme {
+  /* Palette marque (hex = source de vérité, équivalents oklch documentés dans le spine) */
+  --color-brand-navy: #0b1f4b;       /* bleu nuit — fonds hero/sections sombres */
+  --color-brand-navy-deep: #060d20;  /* footer, abysses */
+  --color-brand-blue: #4a6cf7;       /* accent principal, CTA */
+  --color-brand-blue-deep: #3a5ce5;  /* hover des CTA bleus */
+  --color-brand-blue-light: #7e97fa; /* tint — glows, blobs aurora, texte accent sur navy */
+
+  /* Aurora drift — GPU only (transform), boucles lentes 21-34s, désamorcées par motion-reduce */
+  --animate-aurora-1: aurora-drift-1 26s ease-in-out infinite;
+  --animate-aurora-2: aurora-drift-2 34s ease-in-out infinite;
+  --animate-aurora-3: aurora-drift-3 21s ease-in-out infinite;
+
+  @keyframes aurora-drift-1 {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(6%, -9%, 0) scale(1.12); }
+  }
+  @keyframes aurora-drift-2 {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(-8%, 6%, 0) scale(0.9); }
+  }
+  @keyframes aurora-drift-3 {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33% { transform: translate3d(4%, 6%, 0) scale(1.07); }
+    66% { transform: translate3d(-5%, -4%, 0) scale(0.96); }
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
