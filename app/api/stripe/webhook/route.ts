@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
       .update({ status: 'validated' })
       .eq('id', applicationId)
 
+    // Rejeter les autres candidatures encore en attente sur ce bien
+    await supabaseAdmin
+      .from('applications')
+      .update({ status: 'rejected' })
+      .eq('property_id', propertyId)
+      .eq('status', 'pending')
+      .neq('id', applicationId)
+
     // Marquer le bien comme occupé
     await supabaseAdmin
       .from('properties')

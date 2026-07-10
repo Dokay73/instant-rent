@@ -15,19 +15,23 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text()
 
-    // Vérification de la signature du webhook (en prod uniquement)
-    if (YOUSIGN_WEBHOOK_SECRET) {
-      const signature = req.headers.get('x-yousign-signature-256')
-      if (!signature) {
-        return NextResponse.json({ error: 'Signature manquante' }, { status: 401 })
-      }
-      const expected = crypto
-        .createHmac('sha256', YOUSIGN_WEBHOOK_SECRET)
-        .update(rawBody)
-        .digest('hex')
-      if (signature !== `sha256=${expected}` && signature !== expected) {
-        return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
-      }
+    // Vérification de la signature du webhook — fail-closed :
+    // sans secret configuré, on refuse tout (sinon n'importe qui peut
+    // marquer un bail comme "signé" en POSTant un faux événement)
+    if (!YOUSIGN_WEBHOOK_SECRET) {
+      console.error('YOUSIGN_WEBHOOK_SECRET manquant — webhook refusé')
+      return NextResponse.json({ error: 'Webhook non configuré' }, { status: 503 })
+    }
+    const signature = req.headers.get('x-yousign-signature-256')
+    if (!signature) {
+      return NextResponse.json({ error: 'Signature manquante' }, { status: 401 })
+    }
+    const expected = crypto
+      .createHmac('sha256', YOUSIGN_WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest('hex')
+    if (signature !== `sha256=${expected}` && signature !== expected) {
+      return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
     }
 
     const body = JSON.parse(rawBody)

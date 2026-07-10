@@ -14,12 +14,17 @@ export async function POST(req: NextRequest) {
 
   const { data: property } = await supabase
     .from('properties')
-    .select('id, owner_id, address, city')
+    .select('id, owner_id, address, city, status')
     .eq('id', propertyId)
     .single()
 
   if (!property || property.owner_id !== user.id) {
     return NextResponse.json({ error: 'Propriété introuvable ou non autorisée' }, { status: 403 })
+  }
+
+  // Empêche de valider une 2e candidature sur un bien déjà loué
+  if (property.status === 'occupied') {
+    return NextResponse.json({ error: 'Ce bien est déjà loué' }, { status: 400 })
   }
 
   const { data: application } = await supabase
@@ -46,6 +51,13 @@ export async function POST(req: NextRequest) {
     trialDays = cappedMonths * 30
   }
 
+  // Fail-fast : sans APP_URL, Stripe recevrait des URLs invalides ("undefined/dashboard")
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  if (!appUrl || !appUrl.startsWith('http')) {
+    console.error('NEXT_PUBLIC_APP_URL manquant ou invalide:', appUrl)
+    return NextResponse.json({ error: 'Configuration serveur incomplète' }, { status: 500 })
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -59,8 +71,8 @@ export async function POST(req: NextRequest) {
       landlordId: user.id,
       hasLaunchPromo: trialDays ? 'true' : 'false',
     },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
+    success_url: `${appUrl}/dashboard?success=true`,
+    cancel_url: `${appUrl}/dashboard?canceled=true`,
     subscription_data: {
       ...(trialDays && { trial_period_days: trialDays }),
       metadata: {

@@ -5,6 +5,9 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import BailTemplate from '@/lib/pdf/BailTemplate'
 import { createElement } from 'react'
 
+// Rendu PDF lourd : le timeout Vercel par défaut (10s) peut être trop court en cold start
+export const maxDuration = 60
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!

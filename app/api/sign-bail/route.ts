@@ -5,6 +5,9 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import BailTemplate from '@/lib/pdf/BailTemplate'
 import { createElement } from 'react'
 
+// Rendu PDF + 5 appels Yousign séquentiels : le timeout Vercel par défaut (10s) est trop court
+export const maxDuration = 60
+
 const YOUSIGN_API_URL = process.env.YOUSIGN_API_URL!
 const YOUSIGN_API_KEY = process.env.YOUSIGN_API_KEY!
 
