@@ -90,6 +90,17 @@ export default function EditPropertyPage() {
   const [dpeCostMin, setDpeCostMin] = useState('')
   const [dpeCostMax, setDpeCostMax] = useState('')
 
+  // Diagnostics légaux
+  const [constructionYear, setConstructionYear] = useState('')
+  const [dpePdfFile, setDpePdfFile] = useState<File | null>(null)
+  const [existingDpePdfUrl, setExistingDpePdfUrl] = useState('')
+  const [erpPdfFile, setErpPdfFile] = useState<File | null>(null)
+  const [existingErpPdfUrl, setExistingErpPdfUrl] = useState('')
+  const [erpDate, setErpDate] = useState('')
+  const [crepPdfFile, setCrepPdfFile] = useState<File | null>(null)
+  const [existingCrepPdfUrl, setExistingCrepPdfUrl] = useState('')
+  const [crepDate, setCrepDate] = useState('')
+
   // Step 4 — Durées
   const [durations, setDurations] = useState<number[]>([1, 3, 6, 12])
   const [noticeDays, setNoticeDays] = useState(30)
@@ -143,6 +154,12 @@ export default function EditPropertyPage() {
       setDpeGesValue(p.dpe_ges_value?.toString() ?? '')
       setDpeCostMin(p.dpe_cost_min?.toString() ?? '')
       setDpeCostMax(p.dpe_cost_max?.toString() ?? '')
+      setConstructionYear(p.construction_year?.toString() ?? '')
+      setExistingDpePdfUrl(p.dpe_pdf_url ?? '')
+      setExistingErpPdfUrl(p.erp_pdf_url ?? '')
+      setErpDate(p.erp_date ?? '')
+      setExistingCrepPdfUrl(p.crep_pdf_url ?? '')
+      setCrepDate(p.crep_date ?? '')
       setDurations(p.allowed_durations ?? [1, 3, 6, 12])
       setNoticeDays(p.notice_days ?? 30)
       setExistingPhotos(p.images_urls ?? [])
@@ -178,6 +195,19 @@ export default function EditPropertyPage() {
       setError('Le loyer est obligatoire.')
       return false
     }
+    if (step === 3) {
+      const rentNum = parseFloat(rentHc) || 0
+      const depositNum = parseFloat(deposit) || 0
+      if (rentNum > 0 && depositNum > 2 * rentNum) {
+        setError(`Le dépôt de garantie est plafonné à 2 mois de loyer hors charges (max ${2 * rentNum} €).`)
+        return false
+      }
+      const yearNum = parseInt(constructionYear, 10)
+      if (constructionYear && (yearNum < 1600 || yearNum > 2026)) {
+        setError("L'année de construction doit être comprise entre 1600 et 2026.")
+        return false
+      }
+    }
     if (step === 4 && durations.length === 0) {
       setError('Sélectionnez au moins une durée.')
       return false
@@ -190,6 +220,22 @@ export default function EditPropertyPage() {
   }
 
   async function handleSubmit(publishValue: boolean) {
+    const rentNum = parseFloat(rentHc) || 0
+    const depositNum = parseFloat(deposit) || 0
+    if (rentNum > 0 && depositNum > 2 * rentNum) {
+      setError(`Le dépôt de garantie est plafonné à 2 mois de loyer hors charges (max ${2 * rentNum} €).`)
+      return
+    }
+    if (publishValue) {
+      if (dpeClass === 'G') {
+        setError('Les biens classés G ne peuvent pas être proposés sur Instant Rent.')
+        return
+      }
+      if (!constructionYear) {
+        setError("L'année de construction est requise pour publier (étape Finances).")
+        return
+      }
+    }
     setLoading(true)
     setError('')
 
@@ -225,6 +271,17 @@ export default function EditPropertyPage() {
       }
     }
 
+    // Upload des diagnostics — on stocke uniquement le path (bucket privé)
+    const uploadDiagnostic = async (file: File | null, name: string, existing: string): Promise<string | null> => {
+      if (!file) return existing || null
+      const path = `${user.id}/property-docs/${propertyId}/${name}.pdf`
+      const { error: uploadError } = await supabase.storage.from('documents').upload(path, file, { upsert: true })
+      return uploadError ? (existing || null) : path
+    }
+    const dpePdfUrl = await uploadDiagnostic(dpePdfFile, 'dpe', existingDpePdfUrl)
+    const erpPdfUrl = await uploadDiagnostic(erpPdfFile, 'erp', existingErpPdfUrl)
+    const crepPdfUrl = await uploadDiagnostic(crepPdfFile, 'crep', existingCrepPdfUrl)
+
     const { error: updateError } = await supabase.from('properties').update({
       address, city,
       surface: parseFloat(surface),
@@ -248,6 +305,12 @@ export default function EditPropertyPage() {
       dpe_ges_value: dpeGesValue ? parseFloat(dpeGesValue) : null,
       dpe_cost_min: dpeCostMin ? parseFloat(dpeCostMin) : null,
       dpe_cost_max: dpeCostMax ? parseFloat(dpeCostMax) : null,
+      construction_year: constructionYear ? parseInt(constructionYear, 10) : null,
+      dpe_pdf_url: dpePdfUrl,
+      erp_pdf_url: erpPdfUrl,
+      erp_date: erpDate || null,
+      crep_pdf_url: crepPdfUrl,
+      crep_date: crepDate || null,
       allowed_durations: durations,
       notice_days: noticeDays,
       images_urls: imageUrls,
@@ -285,8 +348,44 @@ export default function EditPropertyPage() {
     </div>
   )
 
+  const PdfUpload = ({ file, onFile, label, existingPath }: { file: File | null; onFile: (f: File) => void; label: string; existingPath?: string }) => (
+    <div className="space-y-2">
+      {existingPath && !file && (
+        <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+          <span className="text-sm text-green-700 font-medium">Document déjà fourni</span>
+          <DocLink path={existingPath} className="text-xs text-[#4A6CF7] hover:underline">Voir ↗</DocLink>
+        </div>
+      )}
+      <label className="block border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-[#0B1F4B] hover:bg-slate-50 transition-colors">
+        {file ? (
+          <div className="flex items-center justify-between px-2">
+            <span className="text-sm text-slate-700 font-medium truncate">{file.name}</span>
+            <span className="text-xs text-green-600 font-medium ml-2 flex-shrink-0">✓ Nouveau</span>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm font-medium text-slate-600">{existingPath ? 'Remplacer le document' : label}</p>
+            <p className="text-xs text-slate-400 mt-1">PDF uniquement</p>
+          </div>
+        )}
+        <input type="file" accept=".pdf,application/pdf" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f) }} />
+      </label>
+    </div>
+  )
+
   const totalRent = (parseFloat(rentHc) || 0) + (parseFloat(charges) || 0)
   const netRent = totalRent - 29
+  const rentHcNum = parseFloat(rentHc) || 0
+  const depositCap = 2 * rentHcNum
+  const depositTooHigh = rentHcNum > 0 && (parseFloat(deposit) || 0) > depositCap
+  const crepRequired = !!constructionYear && parseInt(constructionYear, 10) < 1949
+  const erpOlderThan5Months = (() => {
+    if (!erpDate) return false
+    const limit = new Date()
+    limit.setMonth(limit.getMonth() - 5)
+    return new Date(erpDate) < limit
+  })()
 
   if (initialLoading) {
     return (
@@ -626,6 +725,9 @@ export default function EditPropertyPage() {
                     <div>
                       <label className="block text-sm text-slate-600 mb-1.5">Montant (€)</label>
                       <input type="number" value={deposit} onChange={e => setDeposit(e.target.value)} min="0" className={inputClass} placeholder="1600" />
+                      {depositTooHigh && (
+                        <p className="text-xs text-red-600 mt-1.5">Le dépôt de garantie est plafonné à 2 mois de loyer hors charges (max {depositCap} €).</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-slate-700 mb-2">Moyens de paiement acceptés</p>
@@ -710,6 +812,61 @@ export default function EditPropertyPage() {
                         </div>
                       </div>
                     </div>
+
+                    {dpeClass === 'G' && (
+                      <div className="bg-red-50 border border-red-100 text-red-600 text-xs px-3.5 py-2.5 rounded-xl">
+                        Les biens classés G ne peuvent pas être proposés sur Instant Rent.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Diagnostics légaux */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-900 mb-1">Diagnostics obligatoires</h2>
+                      <p className="text-xs text-slate-500">Ces documents seront annexés au bail. Sans eux, la génération du bail sera bloquée.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1.5">Année de construction *</label>
+                      <input type="number" value={constructionYear} onChange={e => setConstructionYear(e.target.value)} min="1600" max="2026" className={inputClass} placeholder="1975" />
+                      <p className="text-xs text-slate-400 mt-1">Nécessaire pour déterminer les diagnostics obligatoires (plomb avant 1949).</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1.5">PDF complet du DPE</label>
+                      <PdfUpload file={dpePdfFile} onFile={setDpePdfFile} label="Cliquez pour ajouter le PDF du DPE" existingPath={existingDpePdfUrl} />
+                      <p className="text-xs text-slate-400 mt-1.5">Le PDF complet remis par votre diagnostiqueur — il sera annexé au bail (obligation légale, art. L126-29 CCH).</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-1.5">État des risques (ERP)</label>
+                      <PdfUpload file={erpPdfFile} onFile={setErpPdfFile} label="Cliquez pour ajouter l'état des risques" existingPath={existingErpPdfUrl} />
+                      <p className="text-xs text-slate-400 mt-1.5">
+                        Gratuit en 2 minutes sur <a href="https://errial.georisques.gouv.fr" target="_blank" rel="noopener noreferrer" className="text-[#4A6CF7] hover:underline">errial.georisques.gouv.fr</a> — doit dater de moins de 6 mois à la signature du bail.
+                      </p>
+                      <div className="mt-3">
+                        <label className="block text-sm text-slate-600 mb-1.5">Date d'établissement de l'ERP</label>
+                        <input type="date" value={erpDate} onChange={e => setErpDate(e.target.value)} className={inputClass} />
+                      </div>
+                      {erpOlderThan5Months && (
+                        <div className="mt-2 bg-orange-50 border border-orange-200 text-orange-700 text-xs px-3.5 py-2.5 rounded-xl">
+                          Cet état des risques a plus de 5 mois. Il doit dater de moins de 6 mois à la signature du bail — pensez à le renouveler.
+                        </div>
+                      )}
+                    </div>
+
+                    {crepRequired && (
+                      <div>
+                        <label className="block text-sm text-slate-600 mb-1.5">CREP plomb</label>
+                        <PdfUpload file={crepPdfFile} onFile={setCrepPdfFile} label="Cliquez pour ajouter le CREP" existingPath={existingCrepPdfUrl} />
+                        <p className="text-xs text-slate-400 mt-1.5">Constat de risque d'exposition au plomb, obligatoire pour les logements construits avant 1949 (validité 6 ans, ou illimitée si négatif).</p>
+                        <div className="mt-3">
+                          <label className="block text-sm text-slate-600 mb-1.5">Date du CREP</label>
+                          <input type="date" value={crepDate} onChange={e => setCrepDate(e.target.value)} className={inputClass} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -838,6 +995,7 @@ export default function EditPropertyPage() {
                         { label: 'Dépôt de garantie', value: deposit ? `${deposit} €` : 'Non renseigné' },
                         { label: 'Durées', value: durations.map(d => `${d} mois`).join(', ') || 'Non renseigné' },
                         { label: 'DPE', value: dpeClass || 'Non renseigné' },
+                        { label: 'Année de construction', value: constructionYear || 'Non renseignée' },
                         { label: 'Photos', value: `${existingPhotos.length + photos.length} photo${(existingPhotos.length + photos.length) !== 1 ? 's' : ''}` },
                         { label: 'Équipements', value: `${equipments.length} sélectionné${equipments.length !== 1 ? 's' : ''}` },
                       ].map(row => (
@@ -900,12 +1058,23 @@ export default function EditPropertyPage() {
                     <p className="text-xs text-slate-500">Vous pouvez enregistrer vos modifications sans changer le statut de publication, ou basculer la mise en ligne.</p>
                   </div>
 
+                  {dpeClass === 'G' && (
+                    <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
+                      Les biens classés G ne peuvent pas être proposés sur Instant Rent. Vous pouvez uniquement enregistrer ce bien en brouillon.
+                    </div>
+                  )}
+                  {dpeClass !== 'G' && !constructionYear && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-xl">
+                      L'année de construction (étape Finances) est requise pour publier votre bien.
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" onClick={() => handleSubmit(false)} disabled={loading}
                       className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">
                       {loading && !isPublished ? 'Sauvegarde...' : 'Enregistrer en brouillon'}
                     </button>
-                    <button type="button" onClick={() => handleSubmit(true)} disabled={loading}
+                    <button type="button" onClick={() => handleSubmit(true)} disabled={loading || dpeClass === 'G' || !constructionYear}
                       className="w-full bg-[#0B1F4B] text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] disabled:opacity-50 transition-colors">
                       {loading ? (uploadingPhotos ? 'Upload photos...' : 'Enregistrement...') : 'Enregistrer et publier'}
                     </button>

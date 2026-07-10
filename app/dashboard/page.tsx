@@ -5,6 +5,7 @@ import Link from 'next/link'
 import TogglePublished from '@/components/TogglePublished'
 import DeleteProperty from '@/components/DeleteProperty'
 import StatCard from '@/components/dashboard/StatCard'
+import InsuranceAttestationUpload from '@/components/dashboard/InsuranceAttestationUpload'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export default async function DashboardPage() {
 
   const { data: applications } = await supabase
     .from('applications')
-    .select('*, properties(address, city, rent_hc, charges)')
+    .select('*, properties(address, city, rent_hc, charges), contracts(signature_status, insurance_attestation_url)')
     .eq('tenant_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -241,6 +242,8 @@ export default async function DashboardPage() {
                     pending: { label: 'En attente', class: 'bg-amber-50 text-amber-700' },
                   }
                   const status = statusMap[app.status as keyof typeof statusMap] ?? statusMap.pending
+                  const contract = app.contracts?.[0]
+                  const needsInsurance = app.status === 'validated' || contract?.signature_status === 'signed'
 
                   return (
                     <div key={app.id} className="bg-white border border-slate-100 rounded-2xl p-5">
@@ -256,6 +259,12 @@ export default async function DashboardPage() {
                           {status.label}
                         </span>
                       </div>
+                      {needsInsurance && (
+                        <InsuranceAttestationUpload
+                          applicationId={app.id}
+                          initialUploaded={!!contract?.insurance_attestation_url}
+                        />
+                      )}
                     </div>
                   )
                 })}

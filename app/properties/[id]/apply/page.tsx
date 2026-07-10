@@ -12,6 +12,13 @@ const REQUIRED_DOCS = [
   { key: 'proof_of_address', profile_field: 'proof_of_address_url', label: 'Justificatif de domicile principal', accept: '.pdf,.jpg,.jpeg,.png' },
 ] as const
 
+const OCCUPANCY_REASONS = [
+  { value: 'sejour_professionnel', label: 'Séjour professionnel ou mission temporaire' },
+  { value: 'double_residence', label: 'Double résidence / pied-à-terre' },
+  { value: 'formation_etudes', label: 'Formation ou études (sans transfert de résidence principale)' },
+  { value: 'autre', label: 'Autre motif' },
+] as const
+
 export default function ApplyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
@@ -24,6 +31,8 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
   const [error, setError] = useState('')
   const [durations, setDurations] = useState<number[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [occupancyReason, setOccupancyReason] = useState('')
+  const [mainResidenceDeclared, setMainResidenceDeclared] = useState(false)
 
   // Dossier centralisé du locataire
   const [dossier, setDossier] = useState<Record<string, string | null>>({
@@ -73,6 +82,8 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
     e.preventDefault()
     if (!duration) return setError('Veuillez sélectionner une durée')
     if (!allDocsReady) return setError('Tous les documents sont requis')
+    if (!occupancyReason) return setError("Veuillez indiquer le motif de votre occupation temporaire")
+    if (!mainResidenceDeclared) return setError("Veuillez cocher la déclaration sur l'honneur")
 
     setUploading(true)
     setError('')
@@ -120,6 +131,8 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
       message,
       docs_urls: docsUrls,
       status: 'pending',
+      occupancy_reason: occupancyReason,
+      main_residence_declared_at: new Date().toISOString(),
     }).select('id').single()
 
     if (appError) {
@@ -312,6 +325,42 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
             />
           </div>
 
+          {/* Motif d'occupation temporaire + déclaration sur l'honneur */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900 mb-1">Motif de votre occupation temporaire</h2>
+              <p className="text-xs text-slate-400 mb-3">Requis — cette information figurera au contrat de bail</p>
+              <select
+                value={occupancyReason}
+                onChange={e => setOccupancyReason(e.target.value)}
+                required
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F4B] bg-white"
+              >
+                <option value="">Sélectionner un motif...</option>
+                {OCCUPANCY_REASONS.map(r => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mainResidenceDeclared}
+                onChange={e => setMainResidenceDeclared(e.target.checked)}
+                required
+                className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-slate-300 text-[#0B1F4B] focus:ring-2 focus:ring-[#0B1F4B] cursor-pointer"
+              />
+              <span className="text-xs text-slate-600 leading-relaxed">
+                J'atteste sur l'honneur que ce logement ne constituera pas ma résidence principale (que j'occupe au moins 8 mois par an à l'adresse indiquée dans mon profil), et que les informations de mon dossier sont exactes. Cette déclaration figurera au contrat de bail.
+              </span>
+            </label>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Le bail Code Civil est réservé aux locations qui ne sont pas votre résidence principale. Votre justificatif de domicile actuel (dossier locataire) sera annexé au bail comme preuve de votre résidence principale.
+            </p>
+          </div>
+
           {error && (
             <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
               {error}
@@ -320,7 +369,7 @@ export default function ApplyPage({ params }: { params: Promise<{ id: string }> 
 
           <button
             type="submit"
-            disabled={uploading || !allDocsReady || !duration}
+            disabled={uploading || !allDocsReady || !duration || !occupancyReason || !mainResidenceDeclared}
             className="w-full bg-[#0B1F4B] text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] disabled:opacity-50 transition-colors"
           >
             {uploading

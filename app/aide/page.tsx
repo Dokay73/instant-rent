@@ -129,6 +129,10 @@ const CATEGORIES: Category[] = [
         a: 'Bail classique (loi 1989) : 3 ans minimum (1 an meublé), résidence principale, encadrement strict. Bail Code Civil : durée libre, usage temporaire/secondaire, plus de souplesse pour les deux parties. Idéal pour les locations courtes (1-24 mois) ou alternatives.',
       },
       {
+        q: 'Le bail généré est-il un conseil juridique ?',
+        a: 'Non. Instant Rent génère un modèle de contrat standardisé rempli avec vos informations, conforme aux exigences légales applicables (diagnostics annexés, mentions obligatoires). Ce n\'est pas une consultation juridique personnalisée. Pour un conseil adapté à votre situation, rapprochez-vous de l\'ADIL (gratuit) ou d\'un avocat.',
+      },
+      {
         q: 'Le bail est-il signé électroniquement ?',
         a: 'Oui, via une procédure de signature électronique (Documenso). Les deux parties reçoivent un email avec un lien sécurisé pour signer, et un dossier de preuve horodaté est archivé. La signature électronique a valeur légale (articles 1366 et 1367 du Code civil).',
       },

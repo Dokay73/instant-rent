@@ -21,7 +21,7 @@ const PROFESSIONAL_STATUSES = [
 
 type DocKey = 'id_card_url' | 'work_contract_url' | 'proof_of_address_url'
 
-const DOCS: { key: DocKey; label: string; desc: string }[] = [
+const DOCS: { key: DocKey; label: string; desc: string; hint?: string }[] = [
   {
     key: 'id_card_url',
     label: "Pièce d'identité",
@@ -36,6 +36,7 @@ const DOCS: { key: DocKey; label: string; desc: string }[] = [
     key: 'proof_of_address_url',
     label: 'Justificatif de domicile actuel',
     desc: 'Quittance de loyer, facture (électricité, gaz, internet) ou attestation d\'hébergement de moins de 3 mois.',
+    hint: 'Ce document sert aussi de justificatif de votre résidence principale, annexé au bail lors d\'une location.',
   },
 ]
 
@@ -253,6 +254,9 @@ export default function DossierLocatairePage() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-slate-900">{doc.label}</p>
                     <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{doc.desc}</p>
+                    {doc.hint && (
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">{doc.hint}</p>
+                    )}
                   </div>
                   {path ? (
                     <span className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-green-50 text-green-700">

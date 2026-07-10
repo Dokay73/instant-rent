@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 const LINKS = [
   { href: '/legal/bail-code-civil', label: 'Bail Code Civil — guide' },
+  { href: '/legal/fonctionnement-plateforme', label: 'Fonctionnement de la plateforme' },
   { href: '/legal/mentions-legales', label: 'Mentions légales' },
   { href: '/legal/cgu', label: 'CGU' },
   { href: '/legal/confidentialite', label: 'Confidentialité' },

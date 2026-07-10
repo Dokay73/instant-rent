@@ -31,7 +31,7 @@ export default async function ApplicationsPage({
 
   const { data: applications } = await supabase
     .from('applications')
-    .select('*, profiles(full_name), contracts(pdf_url, signature_status)')
+    .select('*, profiles(full_name), contracts(pdf_url, signature_status, insurance_attestation_url)')
     .eq('property_id', id)
     .order('created_at', { ascending: false })
 
@@ -141,6 +141,20 @@ export default async function ApplicationsPage({
                         applicationId={app.id}
                         propertyId={id}
                       />
+                    </div>
+                  )}
+                  {app.status === 'validated' && app.contracts?.[0] && (
+                    <div className="mt-3">
+                      {app.contracts[0].insurance_attestation_url ? (
+                        <DocLink
+                          path={app.contracts[0].insurance_attestation_url}
+                          applicationId={app.id}
+                          className="text-xs text-green-700 hover:underline">
+                          ✓ Attestation d'assurance reçue — télécharger
+                        </DocLink>
+                      ) : (
+                        <p className="text-xs text-slate-400">⏳ Attestation d'assurance en attente</p>
+                      )}
                     </div>
                   )}
                 </div>
