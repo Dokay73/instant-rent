@@ -2,42 +2,43 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
-// Appels réseau séquentiels à DocuSeal : le timeout Vercel par défaut (10s) est trop court
+// Appels réseau séquentiels à Documenso : le timeout Vercel par défaut (10s) est trop court
 export const maxDuration = 60
 
-// DocuSeal auto-hébergé (décision 2026-07-10 : remplace Yousign, API trial expirée)
-// DOCUSEAL_API_URL = base API de l'instance, ex: https://sign.instant-rent.fr/api
-const DOCUSEAL_API_URL = process.env.DOCUSEAL_API_URL!
-const DOCUSEAL_API_KEY = process.env.DOCUSEAL_API_KEY!
+// Documenso auto-hébergé (décision 2026-07-10 : signature 0€, API complète en
+// édition communautaire). DOCUMENSO_API_URL = base v1, ex:
+// https://sign.instant-rent.fr/api/v1
+const DOCUMENSO_API_URL = process.env.DOCUMENSO_API_URL!
+const DOCUMENSO_API_KEY = process.env.DOCUMENSO_API_KEY!
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function docuseal(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${DOCUSEAL_API_URL}${path}`, {
+async function documenso(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${DOCUMENSO_API_URL}${path}`, {
     ...options,
     headers: {
-      'X-Auth-Token': DOCUSEAL_API_KEY,
+      Authorization: DOCUMENSO_API_KEY,
       'Content-Type': 'application/json',
       ...options.headers,
     },
   })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`DocuSeal ${res.status}: ${text}`)
+    throw new Error(`Documenso ${res.status}: ${text}`)
   }
   return res.json()
 }
 
 // Zones des champs de signature sur la PAGE DE SIGNATURE dédiée du template v2
 // (lib/pdf/BailTemplate.tsx — dernière page du contrat, avant les annexes fusionnées).
-// DocuSeal : coordonnées RELATIVES (0-1) à la page, origine en haut à gauche.
+// Documenso v1 : coordonnées en POURCENTAGES (0-100) de la page, origine en haut à gauche.
 // Alignées sur les cadres pointillés du template (A4 : 595.28 × 841.89 pt).
-const SIGNATURE_AREAS = {
-  landlord: { x: 0.09, y: 0.21, w: 0.34, h: 0.085 },
-  tenant: { x: 0.56, y: 0.21, w: 0.34, h: 0.085 },
+const SIGNATURE_FIELDS = {
+  landlord: { pageX: 9, pageY: 21, pageWidth: 34, pageHeight: 8.5 },
+  tenant: { pageX: 56, pageY: 21, pageWidth: 34, pageHeight: 8.5 },
 }
 
 export async function POST(req: NextRequest) {
@@ -46,9 +47,9 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
-    if (!process.env.DOCUSEAL_API_URL || !process.env.DOCUSEAL_API_KEY) {
+    if (!process.env.DOCUMENSO_API_URL || !process.env.DOCUMENSO_API_KEY) {
       return NextResponse.json(
-        { error: 'Signature électronique non configurée (DocuSeal)' },
+        { error: 'Signature électronique non configurée' },
         { status: 503 }
       )
     }
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
     // EST le fichier généré et prévisualisé — on ne régénère jamais ici ──
     const { data: contract } = await supabaseAdmin
       .from('contracts')
-      .select('pdf_url, signature_status, signature_page, docuseal_submission_id')
+      .select('pdf_url, signature_status, signature_page, documenso_document_id')
       .eq('application_id', applicationId)
       .single()
 
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
-    if (contract.docuseal_submission_id && !['declined', 'expired'].includes(contract.signature_status)) {
+    if (contract.documenso_document_id && !['declined', 'expired'].includes(contract.signature_status)) {
       return NextResponse.json(
         { error: 'Une demande de signature est déjà en cours pour ce bail' },
         { status: 409 }
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
     if (dlError || !pdfBlob) {
       return NextResponse.json({ error: 'PDF du bail introuvable — régénérez le bail' }, { status: 400 })
     }
-    const pdfBase64 = Buffer.from(await pdfBlob.arrayBuffer()).toString('base64')
+    const pdfBytes = await pdfBlob.arrayBuffer()
     const signaturePage = contract.signature_page
 
     // ── Coordonnées des signataires ──
@@ -110,73 +111,97 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Emails manquants' }, { status: 400 })
     }
 
-    // 1. Créer le template DocuSeal depuis le PDF stocké (champs positionnés
-    //    sur la page de signature)
-    const template = await docuseal('/templates/pdf', {
+    // 1. Créer le document (renvoie une URL d'upload + les ids des destinataires).
+    //    Signature séquentielle : le bailleur signe d'abord, puis le locataire.
+    const created = await documenso('/documents', {
       method: 'POST',
       body: JSON.stringify({
-        name: `Bail Instant Rent — ${property.title} — ${applicationId}`,
-        documents: [{
-          name: 'bail.pdf',
-          file: pdfBase64,
-        }],
-        fields: [
+        title: `Bail Instant Rent — ${property.title}`,
+        externalId: String(applicationId),
+        recipients: [
           {
-            name: 'Signature du Bailleur',
-            type: 'signature',
-            role: 'Bailleur',
-            required: true,
-            areas: [{ page: signaturePage, ...SIGNATURE_AREAS.landlord }],
-          },
-          {
-            name: 'Signature du Locataire',
-            type: 'signature',
-            role: 'Locataire',
-            required: true,
-            areas: [{ page: signaturePage, ...SIGNATURE_AREAS.tenant }],
-          },
-        ],
-      }),
-    })
-
-    // 2. Créer la submission : envoi séquentiel par email (bailleur puis locataire)
-    const submission = await docuseal('/submissions', {
-      method: 'POST',
-      body: JSON.stringify({
-        template_id: template.id,
-        send_email: true,
-        order: 'preserved',
-        submitters: [
-          {
-            role: 'Bailleur',
             name: property.profiles?.full_name ?? 'Bailleur',
             email: ownerAuth.user.email,
+            role: 'SIGNER',
+            signingOrder: 1,
           },
           {
-            role: 'Locataire',
             name: application.profiles?.full_name ?? 'Locataire',
             email: tenantAuth.user.email,
+            role: 'SIGNER',
+            signingOrder: 2,
           },
         ],
+        meta: {
+          signingOrder: 'SEQUENTIAL',
+          language: 'fr',
+          timezone: 'Europe/Paris',
+          subject: 'Signature de votre bail Instant Rent',
+          message:
+            'Bonjour, votre bail est prêt à être signé. Cliquez sur le lien pour le lire et le signer électroniquement.',
+        },
       }),
     })
 
-    // L'API renvoie soit { id, submitters } soit directement la liste des submitters
-    const submissionId = submission?.id ?? submission?.[0]?.submission_id
-    if (!submissionId) {
-      throw new Error('DocuSeal : identifiant de submission introuvable dans la réponse')
+    const documentId: number = created.documentId
+    const uploadUrl: string = created.uploadUrl
+    const recipients: Array<{ recipientId: number; email: string }> = created.recipients ?? []
+    if (!documentId || !uploadUrl || recipients.length < 2) {
+      throw new Error('Documenso : réponse de création de document incomplète')
     }
 
-    // 3. Sauvegarder l'identifiant
+    // 2. Uploader le PDF stocké, tel quel
+    const up = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/pdf' },
+      body: pdfBytes,
+    })
+    if (!up.ok) {
+      throw new Error(`Documenso upload ${up.status}: ${await up.text()}`)
+    }
+
+    // 3. Poser les champs de signature sur la page de signature
+    const ownerRecipient = recipients.find(r => r.email === ownerAuth.user!.email)
+    const tenantRecipient = recipients.find(r => r.email === tenantAuth.user!.email)
+    if (!ownerRecipient || !tenantRecipient) {
+      throw new Error('Documenso : destinataires introuvables dans la réponse')
+    }
+
+    await documenso(`/documents/${documentId}/fields`, {
+      method: 'POST',
+      body: JSON.stringify({
+        recipientId: ownerRecipient.recipientId,
+        type: 'SIGNATURE',
+        pageNumber: signaturePage,
+        ...SIGNATURE_FIELDS.landlord,
+      }),
+    })
+    await documenso(`/documents/${documentId}/fields`, {
+      method: 'POST',
+      body: JSON.stringify({
+        recipientId: tenantRecipient.recipientId,
+        type: 'SIGNATURE',
+        pageNumber: signaturePage,
+        ...SIGNATURE_FIELDS.tenant,
+      }),
+    })
+
+    // 4. Envoyer (emails de signature)
+    await documenso(`/documents/${documentId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ sendEmail: true }),
+    })
+
+    // 5. Sauvegarder l'identifiant
     await supabaseAdmin
       .from('contracts')
       .update({
-        docuseal_submission_id: String(submissionId),
+        documenso_document_id: String(documentId),
         signature_status: 'pending',
       })
       .eq('application_id', applicationId)
 
-    return NextResponse.json({ ok: true, submissionId })
+    return NextResponse.json({ ok: true, documentId })
   } catch (err: unknown) {
     console.error('Sign bail error:', err)
     const message = err instanceof Error ? err.message : 'Erreur inconnue'

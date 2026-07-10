@@ -4,17 +4,19 @@ import crypto from 'crypto'
 
 export const maxDuration = 60
 
+// Webhook Documenso (le chemin /api/docuseal-webhook est conservé tel quel :
+// c'est l'URL enregistrée côté instance de signature)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const DOCUSEAL_API_URL = process.env.DOCUSEAL_API_URL
-const DOCUSEAL_API_KEY = process.env.DOCUSEAL_API_KEY
-// Secret partagé, configuré comme header personnalisé "X-Webhook-Secret" dans les
-// réglages du webhook DocuSeal. Fail-closed : sans secret configuré, tout est refusé
+const DOCUMENSO_API_URL = process.env.DOCUMENSO_API_URL
+const DOCUMENSO_API_KEY = process.env.DOCUMENSO_API_KEY
+// Secret configuré sur le webhook Documenso, transmis dans le header
+// X-Documenso-Secret. Fail-closed : sans secret configuré, tout est refusé
 // (sinon n'importe qui pourrait marquer un bail comme "signé").
-const WEBHOOK_SECRET = process.env.DOCUSEAL_WEBHOOK_SECRET
+const WEBHOOK_SECRET = process.env.DOCUMENSO_WEBHOOK_SECRET
 
 function timingSafeEqual(a: string, b: string): boolean {
   const ba = Buffer.from(a)
@@ -23,75 +25,69 @@ function timingSafeEqual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(ba, bb)
 }
 
-async function downloadToStorage(url: string, destPath: string): Promise<boolean> {
-  const res = await fetch(url, {
-    headers: DOCUSEAL_API_KEY ? { 'X-Auth-Token': DOCUSEAL_API_KEY } : undefined,
-  })
-  if (!res.ok) return false
-  const bytes = new Uint8Array(await res.arrayBuffer())
-  const { error } = await supabaseAdmin.storage.from('documents').upload(destPath, bytes, {
-    contentType: 'application/pdf',
-    upsert: true,
-  })
-  return !error
-}
-
 export async function POST(req: NextRequest) {
   try {
     if (!WEBHOOK_SECRET) {
-      console.error('DOCUSEAL_WEBHOOK_SECRET manquant — webhook refusé')
+      console.error('DOCUMENSO_WEBHOOK_SECRET manquant — webhook refusé')
       return NextResponse.json({ error: 'Webhook non configuré' }, { status: 503 })
     }
-    const provided = req.headers.get('x-webhook-secret')
+    const provided = req.headers.get('x-documenso-secret')
     if (!provided || !timingSafeEqual(provided, WEBHOOK_SECRET)) {
       return NextResponse.json({ error: 'Secret invalide' }, { status: 401 })
     }
 
     const body = await req.json()
-    const eventType: string = body.event_type ?? body.event ?? ''
-    const data = body.data ?? {}
-    const submissionId = data.id ?? data.submission_id
-    if (!submissionId) {
+    const event: string = body.event ?? ''
+    const payload = body.payload ?? {}
+    const documentId = payload.id
+    const externalId = payload.externalId
+
+    if (!documentId) {
       return NextResponse.json({ ok: true })
     }
 
-    const { data: contract } = await supabaseAdmin
+    // Retrouver le contrat : par id de document, sinon par externalId (= applicationId)
+    let { data: contract } = await supabaseAdmin
       .from('contracts')
       .select('application_id')
-      .eq('docuseal_submission_id', String(submissionId))
+      .eq('documenso_document_id', String(documentId))
       .single()
 
+    if (!contract && externalId) {
+      const { data: byExternal } = await supabaseAdmin
+        .from('contracts')
+        .select('application_id')
+        .eq('application_id', externalId)
+        .single()
+      contract = byExternal
+    }
+
     if (!contract?.application_id) {
-      // Submission inconnue chez nous : on acquitte sans rien faire
+      // Document inconnu chez nous : on acquitte sans rien faire
       return NextResponse.json({ ok: true })
     }
 
-    if (eventType === 'submission.completed') {
-      // Récupérer le PDF signé (payload direct, sinon via l'API)
-      let signedUrl: string | null = data.documents?.[0]?.url ?? null
-      let auditUrl: string | null = data.audit_log_url ?? null
-
-      if ((!signedUrl || !auditUrl) && DOCUSEAL_API_URL && DOCUSEAL_API_KEY) {
-        const res = await fetch(`${DOCUSEAL_API_URL}/submissions/${submissionId}`, {
-          headers: { 'X-Auth-Token': DOCUSEAL_API_KEY },
-        })
-        if (res.ok) {
-          const sub = await res.json()
-          signedUrl = signedUrl ?? sub.documents?.[0]?.url ?? sub.submitters?.[0]?.documents?.[0]?.url ?? null
-          auditUrl = auditUrl ?? sub.audit_log_url ?? null
-        }
-      }
-
+    if (event === 'DOCUMENT_COMPLETED') {
+      // Récupérer le PDF signé (scellé) via l'API
       let signedPdfPath: string | null = null
-      if (signedUrl) {
-        const path = `contracts/${contract.application_id}/bail-signe.pdf`
-        if (await downloadToStorage(signedUrl, path)) signedPdfPath = path
-      }
-      // Audit trail : preuve de la signature — archivage systématique (MISSION LEGAL-001 D5)
-      let auditPath: string | null = null
-      if (auditUrl) {
-        const path = `contracts/${contract.application_id}/bail-audit-trail.pdf`
-        if (await downloadToStorage(auditUrl, path)) auditPath = path
+      if (DOCUMENSO_API_URL && DOCUMENSO_API_KEY) {
+        const dl = await fetch(`${DOCUMENSO_API_URL}/documents/${documentId}/download`, {
+          headers: { Authorization: DOCUMENSO_API_KEY },
+        })
+        if (dl.ok) {
+          const { downloadUrl } = await dl.json()
+          if (downloadUrl) {
+            const fileRes = await fetch(downloadUrl)
+            if (fileRes.ok) {
+              const bytes = new Uint8Array(await fileRes.arrayBuffer())
+              const path = `contracts/${contract.application_id}/bail-signe.pdf`
+              const { error } = await supabaseAdmin.storage
+                .from('documents')
+                .upload(path, bytes, { contentType: 'application/pdf', upsert: true })
+              if (!error) signedPdfPath = path
+            }
+          }
+        }
       }
 
       await supabaseAdmin
@@ -100,21 +96,20 @@ export async function POST(req: NextRequest) {
           signature_status: 'signed',
           signed_at: new Date().toISOString(),
           ...(signedPdfPath ? { pdf_url: signedPdfPath } : {}),
-          ...(auditPath ? { audit_log_url: auditPath } : {}),
         })
-        .eq('docuseal_submission_id', String(submissionId))
+        .eq('application_id', contract.application_id)
     }
 
-    if (eventType === 'submission.expired' || eventType === 'form.declined') {
+    if (event === 'DOCUMENT_REJECTED' || event === 'RECIPIENT_EXPIRED') {
       await supabaseAdmin
         .from('contracts')
-        .update({ signature_status: eventType === 'form.declined' ? 'declined' : 'expired' })
-        .eq('docuseal_submission_id', String(submissionId))
+        .update({ signature_status: event === 'DOCUMENT_REJECTED' ? 'declined' : 'expired' })
+        .eq('application_id', contract.application_id)
     }
 
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
-    console.error('DocuSeal webhook error:', err)
+    console.error('Documenso webhook error:', err)
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
     return NextResponse.json({ error: message }, { status: 500 })
   }
