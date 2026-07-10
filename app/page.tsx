@@ -12,6 +12,7 @@ import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import AnimatedBackground from '@/components/ui/AnimatedBackground'
 import Reveal, { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { isPreLaunch } from '@/lib/launch'
+import PioneerSpots from '@/components/PioneerSpots'
 
 const LANDLORD_BENEFITS = [
   {
@@ -90,16 +91,7 @@ export default function HomePage() {
 
           {/* Left — content */}
           <div>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="inline-flex items-center gap-2.5 border border-white/10 bg-white/5 text-white/60 text-xs font-medium px-4 py-2 rounded-full mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-blue flex-shrink-0" />
-              {preLaunch
-                ? 'Pré-lancement Paris · 60 jours offerts aux 50 premiers proprios'
-                : 'Bail Code Civil & mobilité · 100% en ligne · 1 à 24 mois'}
-            </motion.div>
+            <PioneerSpots preLaunch={preLaunch} />
 
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
