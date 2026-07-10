@@ -2,59 +2,42 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
-// 5 appels réseau séquentiels à Yousign : le timeout Vercel par défaut (10s) est trop court
+// Appels réseau séquentiels à DocuSeal : le timeout Vercel par défaut (10s) est trop court
 export const maxDuration = 60
 
-const YOUSIGN_API_URL = process.env.YOUSIGN_API_URL!
-const YOUSIGN_API_KEY = process.env.YOUSIGN_API_KEY!
+// DocuSeal auto-hébergé (décision 2026-07-10 : remplace Yousign, API trial expirée)
+// DOCUSEAL_API_URL = base API de l'instance, ex: https://sign.instant-rent.fr/api
+const DOCUSEAL_API_URL = process.env.DOCUSEAL_API_URL!
+const DOCUSEAL_API_KEY = process.env.DOCUSEAL_API_KEY!
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function yousign(path: string, options: RequestInit = {}) {
-  const isFormData = options.body instanceof FormData
-  const res = await fetch(`${YOUSIGN_API_URL}${path}`, {
+async function docuseal(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${DOCUSEAL_API_URL}${path}`, {
     ...options,
     headers: {
-      Authorization: `Bearer ${YOUSIGN_API_KEY}`,
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      'X-Auth-Token': DOCUSEAL_API_KEY,
+      'Content-Type': 'application/json',
       ...options.headers,
     },
   })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`Yousign ${res.status}: ${text}`)
+    throw new Error(`DocuSeal ${res.status}: ${text}`)
   }
   return res.json()
 }
 
-function splitName(full: string) {
-  const parts = (full || '').trim().split(/\s+/)
-  const first = parts[0] || 'Signataire'
-  // Ne jamais fabriquer un nom fictif : à défaut, réutiliser le prénom
-  const last = parts.slice(1).join(' ') || first
-  return { first, last }
-}
-
-// Normalise un numéro mobile FR en E.164 (+33...) pour l'OTP SMS Yousign
-function normalizePhone(raw?: string | null): string | null {
-  if (!raw) return null
-  const digits = raw.replace(/[\s.\-()]/g, '')
-  if (/^\+33[67]\d{8}$/.test(digits)) return digits
-  if (/^0[67]\d{8}$/.test(digits)) return `+33${digits.slice(1)}`
-  if (/^33[67]\d{8}$/.test(digits)) return `+${digits}`
-  return null
-}
-
-// Positions des champs de signature sur la PAGE DE SIGNATURE dédiée du template v2
+// Zones des champs de signature sur la PAGE DE SIGNATURE dédiée du template v2
 // (lib/pdf/BailTemplate.tsx — dernière page du contrat, avant les annexes fusionnées).
-// Le numéro de cette page est persisté par generate-bail dans contracts.signature_page.
-// Yousign : origine en haut à gauche, unités en points PDF.
-const SIGNATURE_FIELDS = {
-  landlord: { x: 55, y: 175, width: 200, height: 60 },
-  tenant: { x: 330, y: 175, width: 200, height: 60 },
+// DocuSeal : coordonnées RELATIVES (0-1) à la page, origine en haut à gauche.
+// Alignées sur les cadres pointillés du template (A4 : 595.28 × 841.89 pt).
+const SIGNATURE_AREAS = {
+  landlord: { x: 0.09, y: 0.21, w: 0.34, h: 0.085 },
+  tenant: { x: 0.56, y: 0.21, w: 0.34, h: 0.085 },
 }
 
 export async function POST(req: NextRequest) {
@@ -62,6 +45,13 @@ export async function POST(req: NextRequest) {
     const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
+    if (!process.env.DOCUSEAL_API_URL || !process.env.DOCUSEAL_API_KEY) {
+      return NextResponse.json(
+        { error: 'Signature électronique non configurée (DocuSeal)' },
+        { status: 503 }
+      )
+    }
 
     const { applicationId } = await req.json()
 
@@ -86,7 +76,7 @@ export async function POST(req: NextRequest) {
     // EST le fichier généré et prévisualisé — on ne régénère jamais ici ──
     const { data: contract } = await supabaseAdmin
       .from('contracts')
-      .select('pdf_url, signature_status, signature_page, yousign_procedure_id')
+      .select('pdf_url, signature_status, signature_page, docuseal_submission_id')
       .eq('application_id', applicationId)
       .single()
 
@@ -96,7 +86,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
-    if (contract.yousign_procedure_id && !['declined', 'expired'].includes(contract.signature_status)) {
+    if (contract.docuseal_submission_id && !['declined', 'expired'].includes(contract.signature_status)) {
       return NextResponse.json(
         { error: 'Une demande de signature est déjà en cours pour ce bail' },
         { status: 409 }
@@ -109,7 +99,7 @@ export async function POST(req: NextRequest) {
     if (dlError || !pdfBlob) {
       return NextResponse.json({ error: 'PDF du bail introuvable — régénérez le bail' }, { status: 400 })
     }
-    const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer())
+    const pdfBase64 = Buffer.from(await pdfBlob.arrayBuffer()).toString('base64')
     const signaturePage = contract.signature_page
 
     // ── Coordonnées des signataires ──
@@ -120,103 +110,73 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Emails manquants' }, { status: 400 })
     }
 
-    // OTP SMS (MISSION LEGAL-001 D5) : mobile requis pour les deux parties
-    const ownerPhone = normalizePhone(property.profiles?.phone)
-    const tenantPhone = normalizePhone(application.profiles?.phone)
-    const missingPhones: string[] = []
-    if (!ownerPhone) missingPhones.push('propriétaire')
-    if (!tenantPhone) missingPhones.push('locataire')
-    if (missingPhones.length > 0) {
-      return NextResponse.json(
-        {
-          error: `Numéro de mobile français manquant ou invalide (${missingPhones.join(' et ')}) — requis pour la signature sécurisée par code SMS. À renseigner dans le profil.`,
-        },
-        { status: 422 }
-      )
+    // 1. Créer le template DocuSeal depuis le PDF stocké (champs positionnés
+    //    sur la page de signature)
+    const template = await docuseal('/templates/pdf', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: `Bail Instant Rent — ${property.title} — ${applicationId}`,
+        documents: [{
+          name: 'bail.pdf',
+          file: pdfBase64,
+        }],
+        fields: [
+          {
+            name: 'Signature du Bailleur',
+            type: 'signature',
+            role: 'Bailleur',
+            required: true,
+            areas: [{ page: signaturePage, ...SIGNATURE_AREAS.landlord }],
+          },
+          {
+            name: 'Signature du Locataire',
+            type: 'signature',
+            role: 'Locataire',
+            required: true,
+            areas: [{ page: signaturePage, ...SIGNATURE_AREAS.tenant }],
+          },
+        ],
+      }),
+    })
+
+    // 2. Créer la submission : envoi séquentiel par email (bailleur puis locataire)
+    const submission = await docuseal('/submissions', {
+      method: 'POST',
+      body: JSON.stringify({
+        template_id: template.id,
+        send_email: true,
+        order: 'preserved',
+        submitters: [
+          {
+            role: 'Bailleur',
+            name: property.profiles?.full_name ?? 'Bailleur',
+            email: ownerAuth.user.email,
+          },
+          {
+            role: 'Locataire',
+            name: application.profiles?.full_name ?? 'Locataire',
+            email: tenantAuth.user.email,
+          },
+        ],
+      }),
+    })
+
+    // L'API renvoie soit { id, submitters } soit directement la liste des submitters
+    const submissionId = submission?.id ?? submission?.[0]?.submission_id
+    if (!submissionId) {
+      throw new Error('DocuSeal : identifiant de submission introuvable dans la réponse')
     }
 
-    const owner = splitName(property.profiles.full_name)
-    const tenant = splitName(application.profiles.full_name)
-
-    // 1. Créer la signature request
-    const sigReq = await yousign('/signature_requests', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: `Bail Instant Rent — ${property.title}`,
-        delivery_mode: 'email',
-        timezone: 'Europe/Paris',
-      }),
-    })
-
-    // 2. Upload du document (le fichier stocké, tel quel)
-    const formData = new FormData()
-    formData.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), 'bail.pdf')
-    formData.append('nature', 'signable_document')
-    formData.append('parse_anchors', 'false')
-
-    const doc = await yousign(`/signature_requests/${sigReq.id}/documents`, {
-      method: 'POST',
-      body: formData,
-    })
-
-    // 3. Ajouter les deux signataires — OTP SMS, champs sur la page de signature
-    await yousign(`/signature_requests/${sigReq.id}/signers`, {
-      method: 'POST',
-      body: JSON.stringify({
-        info: {
-          first_name: owner.first,
-          last_name: owner.last,
-          email: ownerAuth.user.email,
-          phone_number: ownerPhone,
-          locale: 'fr',
-        },
-        signature_level: 'electronic_signature',
-        signature_authentication_mode: 'otp_sms',
-        fields: [{
-          document_id: doc.id,
-          type: 'signature',
-          page: signaturePage,
-          ...SIGNATURE_FIELDS.landlord,
-        }],
-      }),
-    })
-
-    await yousign(`/signature_requests/${sigReq.id}/signers`, {
-      method: 'POST',
-      body: JSON.stringify({
-        info: {
-          first_name: tenant.first,
-          last_name: tenant.last,
-          email: tenantAuth.user.email,
-          phone_number: tenantPhone,
-          locale: 'fr',
-        },
-        signature_level: 'electronic_signature',
-        signature_authentication_mode: 'otp_sms',
-        fields: [{
-          document_id: doc.id,
-          type: 'signature',
-          page: signaturePage,
-          ...SIGNATURE_FIELDS.tenant,
-        }],
-      }),
-    })
-
-    // 4. Activer (envoie les emails de signature)
-    await yousign(`/signature_requests/${sigReq.id}/activate`, {
-      method: 'POST',
-    })
-
-    // 5. Sauvegarder l'identifiant
+    // 3. Sauvegarder l'identifiant
     await supabaseAdmin
       .from('contracts')
       .update({
-        yousign_procedure_id: sigReq.id,
+        docuseal_submission_id: String(submissionId),
         signature_status: 'pending',
       })
       .eq('application_id', applicationId)
 
-    return NextResponse.json({ ok: true, procedureId: sigReq.id })
+    return NextResponse.json({ ok: true, submissionId })
   } catch (err: unknown) {
     console.error('Sign bail error:', err)
     const message = err instanceof Error ? err.message : 'Erreur inconnue'

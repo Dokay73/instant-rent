@@ -9,7 +9,7 @@ import {
 // Template v2 — transposition du texte juridique validé (MISSION LEGAL-001,
 // data/knowledge/legal-bail/outputs/MISSION-LEGAL-001-conformite-bail.md §4).
 // 15 articles + page de signature dédiée (toujours la dernière page du contrat,
-// pour l'ancrage des champs Yousign — voir app/api/sign-bail/route.ts).
+// pour l'ancrage des champs de signature DocuSeal — voir app/api/sign-bail/route.ts).
 // Ne pas modifier le texte des clauses sans passer par l'agent legal-bail-expert.
 
 const styles = StyleSheet.create({
@@ -588,8 +588,10 @@ export default function BailTemplate({ data }: { data: BailData }) {
         <Text style={styles.sectionTitle}>Article 14 — Signature électronique</Text>
         <Text style={styles.text}>
           Le présent contrat est conclu par voie électronique. Les parties conviennent que sa
-          signature au moyen du procédé de signature électronique mis en œuvre par le prestataire
-          Yousign vaut signature au sens des <Text style={styles.bold}>articles 1366 et 1367 du
+          signature au moyen du procédé fiable de signature électronique mis en œuvre via la
+          plateforme (prestataire : DocuSeal), comportant l'identification de chaque signataire
+          par lien personnel adressé à son adresse électronique et un dossier de preuve horodaté,
+          vaut signature au sens des <Text style={styles.bold}>articles 1366 et 1367 du
           Code civil</Text> et manifeste leur consentement aux obligations qui en découlent.
           Conformément à l'<Text style={styles.bold}>article 1375 du Code civil</Text>, l'exigence
           d'une pluralité d'originaux est réputée satisfaite : l'acte est établi et conservé dans
@@ -610,7 +612,7 @@ export default function BailTemplate({ data }: { data: BailData }) {
       </Page>
 
       {/* PAGE DE SIGNATURE — toujours la dernière page, layout fixe.
-          Les champs Yousign sont posés sur cette page par sign-bail
+          Les champs DocuSeal sont posés sur cette page par sign-bail
           (coordonnées alignées sur les signatureBox ci-dessous). */}
       <Page size="A4" style={styles.page}>
         <Text
@@ -638,7 +640,7 @@ export default function BailTemplate({ data }: { data: BailData }) {
         </View>
 
         <Text style={[styles.small, { marginTop: 24 }]}>
-          Contrat signé au moyen du procédé de signature électronique Yousign (article 14). Le
+          Contrat signé au moyen du procédé de signature électronique DocuSeal (article 14). Le
           dossier de preuve (audit trail) est archivé et tenu à la disposition des parties.
         </Text>
       </Page>

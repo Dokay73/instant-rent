@@ -24,7 +24,7 @@ la plus sensible").
 
 ## 2026-07-10 — MISSION LEGAL-001 : audit de conformité du bail généré
 
-**Statut : constats posés, décisions proposées — EN ATTENTE D'ARBITRAGE FONDATEUR.**
+**Statut : ARBITRÉ PAR LE FONDATEUR le 2026-07-10** (voir bas d'entrée).
 
 **Livrables** : KB complète (`sources/`, 8 fiches sourcées), audit ligne par ligne
 (`analysis/audit-bail-template-2026-07.md`), rapport final avec template v2 intégral
@@ -69,5 +69,32 @@ la plus sensible").
 - D9 : faire valider le template v2 et le parcours par un avocat avant lancement
   (points incertains listés au §6 du rapport : animaux/loi 70-598, ERP hors loi 89,
   frontière consultation juridique, Hoguet).
+
+**Arbitrage fondateur (2026-07-10)** :
+- ✅ D1 + D3 + D5 + D8 : **GO template v2 complet** avec fixes techniques, y compris
+  OTP SMS Yousign, génération unique du PDF, date de début choisie par les parties,
+  champs de signature ancrés en fin de document, dépôt plafonné à 2 mois HC.
+- ✅ D2 : **tout bloquant** — DPE complet, état des risques < 6 mois, année de
+  construction (+ CREP si < 1949) côté proprio ; adresse de résidence principale +
+  déclaration sur l'honneur + justificatif côté locataire ; attestation d'assurance
+  avant remise des clés. Positionnement assumé « bail béton » premium.
+- ✅ D4 : **suppression de la résiliation de convenance du bailleur** ; le locataire
+  conserve son préavis de 30 jours (argument flexibilité).
+- ✅ D6 : **refus des biens classés G** à la publication.
+- D7 (page légale L111-7 + disclaimers) : à implémenter avec le lot.
+- D9 (validation avocat) : recommandé au fondateur avant ouverture publique — non
+  planifié à ce jour.
+
+**Amendement D5 (2026-07-10, arbitrage fondateur)** : découverte que le trial API
+Yousign est expiré et que l'API Yousign est un abonnement entreprise séparé (les
+plans app 9-38 €/mois n'incluent pas l'API). Décision : **bascule vers DocuSeal
+auto-hébergé** (open-source, 0 €, signatures illimitées, audit trail horodaté).
+Conséquence assumée : **pas d'OTP SMS** au lancement — authentification du
+signataire par lien email personnel (signature électronique simple, art. 1366-1367
+C. civ., même niveau que le no_otp Yousign qu'on avait). Risque accepté à titre
+transitoire ; montée en gamme (SMS/AES) à réévaluer quand le MRR le justifie.
+L'article 14 du template décrit désormais le procédé réel (lien email personnel +
+dossier de preuve horodaté). Le webhook DocuSeal est sécurisé par secret partagé
+fail-closed.
 
 ---

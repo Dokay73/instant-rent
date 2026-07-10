@@ -130,7 +130,7 @@ const CATEGORIES: Category[] = [
       },
       {
         q: 'Le bail est-il signé électroniquement ?',
-        a: 'Oui, via une procédure de signature électronique avancée (Yousign). Les deux parties reçoivent un email avec un lien sécurisé pour signer. Le PDF signé a la même valeur juridique qu\'une signature manuscrite.',
+        a: 'Oui, via une procédure de signature électronique (DocuSeal). Les deux parties reçoivent un email avec un lien sécurisé pour signer, et un dossier de preuve horodaté est archivé. La signature électronique a valeur légale (articles 1366 et 1367 du Code civil).',
       },
     ],
   },

@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
   )
 
   // Numéro de la page de signature = dernière page du contrat AVANT fusion des
-  // annexes (sign-bail y ancre les champs Yousign)
+  // annexes (sign-bail y ancre les champs de signature DocuSeal)
   const contractDoc = await PDFDocument.load(contractPdf)
   const signaturePage = contractDoc.getPageCount()
 

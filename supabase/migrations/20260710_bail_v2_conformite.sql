@@ -19,8 +19,11 @@ ALTER TABLE applications
   ADD COLUMN IF NOT EXISTS main_residence_declared_at timestamptz;
 
 -- Contrat : date de prise d'effet choisie par les parties + page de signature +
--- attestation d'assurance (remise des clés)
+-- attestation d'assurance (remise des clés) + signature DocuSeal (remplace Yousign,
+-- décision 2026-07-10) + archivage du dossier de preuve
 ALTER TABLE contracts
   ADD COLUMN IF NOT EXISTS start_date date,
   ADD COLUMN IF NOT EXISTS signature_page integer,
-  ADD COLUMN IF NOT EXISTS insurance_attestation_url text;
+  ADD COLUMN IF NOT EXISTS insurance_attestation_url text,
+  ADD COLUMN IF NOT EXISTS docuseal_submission_id text,
+  ADD COLUMN IF NOT EXISTS audit_log_url text;
