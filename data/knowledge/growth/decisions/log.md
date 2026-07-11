@@ -33,3 +33,25 @@ risque marque). Rareté honnête déployée à la place ("Plus que X places sur 
 **Stratégie 10 premiers** : recrutement manuel (concierge), supply-first. "Do things that don't scale."
 
 ---
+
+## 2026-07-11 — Mission growth-intel-001 : remplissage KB avec du réel (recherche web)
+
+**Décision** : constituer une base d'intel chiffrée et sourcée pour que l'outreach tape juste.
+Trois livrables créés :
+- `competitors/commissions-et-modeles.md` — commissions proprio réelles : Wunderflats **12% TTC
+  du contrat total**, Lodgis **15% du loyer annuel** (bail hors loi 89 = notre segment) + 6-13%
+  gestion, Spotahome Plus **8%** / standard opaque + **~25% côté locataire**, Leboncoin/PAP
+  gratuit mais 0 filtrage/bail, Airbnb = réglementation Paris (90 nuits, changement d'usage
+  40-70k€, amendes 10-50k€, micro-BIC 50%→30%).
+- `synthesis/voix-client-proprios.md` — ~30 verbatims proprios sourcés (Lodgis "peu de service",
+  Wunderflats support fantôme, Manda "5 mois perdus", tri 40 dossiers auto-gestion).
+- `channels/sourcing-playbook.md` — filtrage par plateforme, groupes FB réels vérifiés, grille
+  de scoring chaud/tiède/froid, ordre d'attaque (Airbnb A → PAP/LBC C → Spotahome/Wunderflats B).
+
+**Chiffres-choc validés pour l'argumentaire** : bail 12 mois à 1500€ = 2 160€ de commission chez
+Wunderflats, 2 700€ chez Lodgis, vs 29€/mois flat chez nous.
+
+**Nuance produit trouvée** : notre bail Code Civil > bail mobilité côté proprio (dépôt de garantie
+autorisé, pas de plafond Visale, durées plus longues = moins de turnover). Argument fin persona A.
+
+---
