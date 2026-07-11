@@ -89,6 +89,79 @@ lit jusqu'au bout. Règles de mise en forme :
 
 ---
 
+## 2bis. Formats & longueur — fondé sur données 2026 (MAJ mission LINKEDIN-002)
+
+*Ajouté le 2026-07-11 après revue des données récentes (sources en bas de section). Cette section
+révise à la baisse la « longueur cible » du §2 pour le cas d'un compte débutant. En cas de conflit,
+c'est celle-ci qui prime pour le fondateur aujourd'hui.*
+
+### Ce que disent les données 2025-2026
+
+- **La longueur n'est pas le signal — le taux de complétion (dwell time) l'est.** Un post
+  *lu jusqu'au bout* bat un post plus long *abandonné à mi-chemin*. Données citées : 61+ s de dwell
+  = ~15,6 % d'engagement, contre ~1,2 % à 0-3 s (meet-lea.com, 2026). L'algo mesure combien de
+  temps on lit avant de scroller (Hootsuite, 2026). Corollaire : **on n'écrit jamais long « pour
+  faire riche » — on écrit exactement aussi long que l'histoire tient en haleine.**
+- **Deux régimes de longueur qui marchent, pas un seul :**
+  - **Court (< ~200 mots / ~700-900 caractères)** : questions, prises de position, récits ramassés.
+    L'étude founder d'Autoposting.ai (1 200+ posts de fondateurs, 2026) trouve que **les posts
+    courts sous ~200 mots surperforment souvent** le long chez les fondateurs — « clarté du point
+    et spécificité du détail » comptent plus que la longueur.
+  - **Long (> 1 500 caractères)** : réservé aux récits de fond, études de cas, narratifs qui ont
+    *vraiment* besoin d'espace (SocialBee/salesandmarketingengineers, 2026). Le medium
+    (900-1 500 car.) reste le « cheval de trait » fiable pour tips/frameworks.
+- **Le hook prime sur tout.** Hooks les plus performants : **< 10 mots**, < 200 caractères,
+  ouverture *in medias res* (« au milieu » d'un moment précis), curiosity gap ou contrarian
+  (magicpost/authoredup, 2026). **82 % des posts sous-performants** ouvrent sur un warm-up mou
+  (« I want to share… », « Here's what I learned ») (Autoposting.ai, 2026). Les 2-3 premières
+  phrases peuvent améliorer la rétention jusqu'à +30 % (LinkedIn Algorithm Insights, cité 2026).
+- **Build-in-public : ouvrir sur un fait précis daté, pas sur le contexte.** Les tops perfs
+  ouvrent « au milieu de l'action » : « Il y a trois mois, j'ai dit à mon associé qu'on allait
+  rater la paie. » — une phrase qui crée une question à laquelle le lecteur DOIT répondre.
+
+### Hiérarchie d'engagement (ce qui « paie » en portée, 2026)
+
+- **Save ≈ 5× la portée d'un like, ≈ 2× celle d'un commentaire** (Hootsuite, 2026). Les posts
+  sauvegardés ressurgissent dans les feeds pendant des semaines.
+- **Commentaire long et pertinent ≈ 15× un like** (multiples sources, 2026). D'où le CTA
+  conversationnel du §4 : on optimise le commentaire, pas le like.
+- **Fenêtre des 30 premières minutes** (resserrée de 60→30 min mi-2025) : un post fort dans cette
+  fenêtre atteint **4-7×** l'audience d'un post à engagement équivalent étalé sur 6 h (Infonet, 2026).
+
+### Reco EXPLICITE pour le cas du fondateur (compte débutant, audience froide)
+
+**Verdict : le fondateur poste COURT (~90-160 mots), pas long — surtout pour un compte neuf.** Raisons :
+
+1. **Pas d'audience acquise pour « porter » un long.** Un gros compte a des fans qui liront 2 000
+   caractères par attachement. Un débutant n'a pas ce crédit : chaque ligne en trop est une sortie
+   possible. Or le **taux de complétion** est le signal dominant → le court **maximise le dwell en
+   % lu** et minimise l'abandon. C'est le pari le plus sûr en risque ajusté.
+2. **L'interest graph joue POUR lui** (le poids du nombre d'abonnés a chuté fin 2025 ; les petits
+   comptes engagés gagnent des batailles de portée — Infonet/Hootsuite/Sprout, 2026). Mais la
+   distribution hors-réseau ne s'active QUE si l'engagement précoce (complétion + commentaires) est
+   fort dans les 30 min → encore un argument pour le court + hook fort + 1 seul CTA.
+3. **Les données founder pointent le court** (Autoposting.ai, 2026 : sub-200 mots surperforme).
+4. **Régularité > intensité, résultats à 60-90 jours.** On ne joue pas un post parfait ; on tient
+   la cadence (§7) et on **mesure** (commentaires + MP entrants, pas les likes).
+
+**Nuance honnête (opinion, pas dogme) :** « court » ≠ « toujours court ». Une fois une base engagée
+constituée (60-90 j de présence tenue) ET si l'histoire tient réellement en haleine, le long-form
+narratif peut très bien marcher. **Reco d'approche : traiter court vs long comme un test.** Sur la
+série build-in-public, alterner un post court et un post medium, et **doubler sur le format qui
+génère le plus de commentaires + MP qualifiés** (le vrai signal, pas les impressions). Le post de
+lancement, lui, part **court** (audience froide → on ne parie pas sur la patience).
+
+### Sources (2025-2026)
+
+- Hootsuite — *How the LinkedIn algorithm works in 2026* (dwell time ; save ≈ 5× like ≈ 2× commentaire ; interest graph).
+- Infonet — *LinkedIn Algorithm Shifts 2025-2026* (fenêtre 30 min, 4-7× portée ; chute du poids des abonnés).
+- Autoposting.ai — *LinkedIn Founder Strategy: 1 200+ posts analysés* (court sub-200 mots surperforme ; 82 % des sous-perf = hook mou ; open in medias res).
+- meet-lea.com — *LinkedIn Algorithm Explained 2026* (dwell : 61+ s ≈ 15,6 % vs 1,2 % à 0-3 s).
+- SocialBee / salesandmarketingengineers.co.uk — *Best practices 2026* (régimes court/medium/long, mixer les longueurs).
+- authoredup / magicpost / connectsafely — *LinkedIn hooks 2026* (hook < 10 mots, curiosity gap 6,8 % / contrarian 6,2 % ; +30 % rétention sur 2-3 premières phrases).
+
+---
+
 ## 3. Le lien va TOUJOURS en 1er commentaire, jamais dans le corps
 
 **Règle non négociable.** L'algo LinkedIn **pénalise la portée des posts contenant un lien
