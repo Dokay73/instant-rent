@@ -83,3 +83,24 @@ sales, pas un pis-aller. Le protocole « colle une annonce » industrialise cett
 publication (garde-fou).
 
 ---
+
+## 2026-07-11 — Révision : compteur live → formulation d'offre statique
+
+**Décision** : REMPLACER le compteur de rareté live « Plus que X places sur 50 » (composant
+`PioneerSpots.tsx`) par une **ligne d'offre statique** : « 60 jours offerts aux 50 premiers
+propriétaires ».
+
+**Raisonnement (fondateur + growth)** : à faible volume, un décompte live se retourne contre nous —
+il **révèle la traction réelle** (2/50 = « seulement 2 inscrits ») et **paraît mort s'il stagne**
+(un visiteur qui revient voit le même chiffre). La rareté reste RÉELLE (50 places pionniers) mais
+formulée comme une **caractéristique de l'offre**, pas comme un compteur qui fuit les chiffres.
+Cohérent avec le garde-fou « zéro faux » (aucun chiffre inventé) ET avec le filtre « Apple/Stripe/
+Notion » (jamais exposer une métrique live qui peut jouer contre soi).
+
+**Réversible** : si la waitlist devient réellement rare (ex. ≥ 40 inscrits proprios), on POURRA
+réactiver un décompte — à ce moment-là il crée une urgence flatteuse, pas embarrassante. Un état
+« 50 places prises · liste d'attente » serait aussi une vraie preuve sociale, à réintroduire quand vrai.
+
+**Arbitrage** : demandé par le fondateur 2026-07-11 (capture du badge à 48/50 → risque de décrédibilisation).
+
+---
