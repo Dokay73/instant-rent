@@ -55,3 +55,31 @@ Wunderflats, 2 700€ chez Lodgis, vs 29€/mois flat chez nous.
 autorisé, pas de plafond Visale, durées plus longues = moins de turnover). Argument fin persona A.
 
 ---
+
+## 2026-07-11 — Mission GROWTH-001 : première vague d'acquisition (broadcast + 1-to-1)
+
+**Décision** : lancer la première vague pré-lancement sur deux leviers en parallèle — broadcast
+(filet large) + 1-to-1 ciblé (harpon) — pour remplir la waitlist proprios pionniers et aligner les
+premières annonces réelles. Trois livrables créés :
+- `outputs/GROWTH-001-broadcast.md` — 5 posts prêts-à-poster (marqués **À VALIDER AVANT PUBLICATION**) :
+  groupes hôtes Airbnb (A, PAS+Cialdini rareté), groupes proprios/LMNP/meublé (B+C, BAB+réciprocité),
+  groupes housing/expat (mixte, StoryBrand+AIDA), réponse valeur réactive (C, autorité pure),
+  LinkedIn build-in-public fondateur (A+B, Dunford+StoryBrand). Zéro concurrent nommé, rareté réelle.
+- `targets/2026-07-11-airbnb-personaA.md` — feuille 12 slots persona A (Airbnb) + messages PAS +
+  relances J+3/J+7 + objections + vivier RÉEL Spotahome vérifié ce jour (Clignancourt, Croulebarbe,
+  Vaugirard, Gambetta) + mini-CRM.
+- `channels/sourcing-recipes.md` — recettes de recherche exactes par plateforme, scoring verrouillé
+  (chaud/tiède/froid), et **protocole « colle une annonce → l'agent qualifie + rédige »** (repérage
+  quotidien du fondateur).
+
+**Constat de sourcing (testé ce jour)** : **Airbnb / Leboncoin / PAP = HTTP 403** (anti-bot),
+**Facebook / LinkedIn = login-wall** → sourcing nominatif impossible pour l'agent (et non souhaitable :
+garde-fou anti-scraping). **Spotahome = accessible** (annonces réelles récupérées, mais prénom bailleur
+absent de la page de recherche). Conséquence stratégique actée : le **fondateur source en navigateur**
+(il voit les noms publics), l'**agent qualifie + rédige** — c'est le travail non-scalable de founder-led
+sales, pas un pis-aller. Le protocole « colle une annonce » industrialise cette division du travail.
+
+**Arbitrage** : mission cadrée par le fondateur 2026-07-11. Comms publiques restent à valider avant
+publication (garde-fou).
+
+---
