@@ -20,6 +20,7 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imagesRef = useRef<HTMLImageElement[]>([])
   const lastDrawn = useRef(-1)
+  const veilRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
   const [beat, setBeat] = useState(0) // 0,1,2
 
@@ -99,6 +100,10 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
     }
     const b = p < 0.36 ? 0 : p < 0.68 ? 1 : 2
     setBeat((prev) => (prev === b ? prev : b))
+    // Voile navy qui REVIENT en fin de scroll — set direct sur le DOM = zéro lag.
+    if (veilRef.current) {
+      veilRef.current.style.opacity = p < 0.72 ? '0' : String(Math.min(0.88, ((p - 0.72) / 0.23) * 0.88))
+    }
   })
 
   const beatCls = (i: number) =>
@@ -111,14 +116,17 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
       <div className="sticky top-0 h-screen w-full overflow-hidden">
         {/* Séquence Paris */}
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
-        {/* Scrims : lisibilité du texte à gauche + assise en bas */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-navy/90 via-brand-navy/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-navy via-brand-navy/10 to-brand-navy/50" />
+        {/* Voile gauche LÉGER : juste ce qu'il faut pour lire le texte ; l'image reste vive à droite */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-navy/75 via-brand-navy/15 to-transparent" />
+        {/* Léger dégradé bas pour le CTA */}
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-brand-navy/65 to-transparent" />
+        {/* Voile navy qui REVIENT progressivement en fin de scroll (piloté au scroll, sans transition) */}
+        <div ref={veilRef} className="absolute inset-0 bg-brand-navy" style={{ opacity: 0, transition: 'none' }} aria-hidden />
 
         {/* Beats */}
         <div className="relative z-10 flex h-full items-center">
           <div className="mx-auto w-full max-w-6xl px-5">
-            <div className="relative h-[360px] max-w-xl">
+            <div className="relative h-[360px] max-w-xl [text-shadow:0_2px_20px_rgba(3,7,20,0.55)]">
               {/* Beat 1 */}
               <div className={beatCls(0)}>
                 <span className="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue-light">Propriétaires · Paris</span>
