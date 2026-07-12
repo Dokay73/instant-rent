@@ -50,3 +50,4 @@ e2e-bot.mjs
 *.pyc
 public/hero/*.gif
 public/hero/*.mp4
+!public/hero/paris.mp4
