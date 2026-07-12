@@ -1,24 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import PreLaunchBanner from '@/components/PreLaunchBanner'
 import Link from 'next/link'
-import { motion } from 'motion/react'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
-import AnimatedBackground from '@/components/ui/AnimatedBackground'
 import Reveal, { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { isPreLaunch } from '@/lib/launch'
-import PioneerSpots from '@/components/PioneerSpots'
-import dynamic from 'next/dynamic'
-
-// Clé 3D (WebGL) — rendu client uniquement, fallback discret pendant le chargement
-const KeyScene = dynamic(() => import('@/components/three/KeyScene'), {
-  ssr: false,
-  loading: () => <div className="w-full h-full" aria-hidden />,
-})
+import ParisScrollHero from '@/components/home/ParisScrollHero'
 
 const LANDLORD_BENEFITS = [
   {
@@ -64,18 +54,7 @@ const HOW_IT_WORKS_TENANT = [
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'landlord' | 'tenant'>('landlord')
-  const [city, setCity] = useState('')
-  const router = useRouter()
   const preLaunch = isPreLaunch()
-
-  function handleSearch(e: React.SyntheticEvent) {
-    e.preventDefault()
-    if (preLaunch) {
-      router.push('/early-access/locataire')
-      return
-    }
-    router.push(`/biens${city ? `?city=${city}` : ''}`)
-  }
 
   const benefits = activeTab === 'landlord' ? LANDLORD_BENEFITS : TENANT_BENEFITS
   const howItWorks = activeTab === 'landlord' ? HOW_IT_WORKS_LANDLORD : HOW_IT_WORKS_TENANT
@@ -88,162 +67,8 @@ export default function HomePage() {
       <PreLaunchBanner />
       <Navbar />
 
-      {/* ── HERO ────────────────────────────────────────────── */}
-      <section className="bg-brand-navy text-white py-20 px-4 relative overflow-hidden" style={{ minHeight: '82dvh', display: 'flex', alignItems: 'center' }}>
-        {/* Fond aurora animé — GPU-only, fallback statique si reduced-motion */}
-        <AnimatedBackground variant="hero" />
-
-        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 lg:gap-20 items-center relative z-10">
-
-          {/* Left — content */}
-          <div>
-            <PioneerSpots preLaunch={preLaunch} />
-
-            <motion.h1
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.06] tracking-tight">
-              {preLaunch ? (
-                <>
-                  Louez votre bien<br />
-                  <span className="text-brand-blue">sans vous engager 3 ans</span>
-                </>
-              ) : (
-                <>
-                  La location<br />
-                  <span className="text-brand-blue">sans contrainte</span>
-                </>
-              )}
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="mt-6 text-white/55 text-lg leading-relaxed max-w-lg">
-              {preLaunch
-                ? 'Propriétaires d\'un bien meublé à Paris : louez en Bail Code Civil ou mobilité, de 1 à 24 mois selon votre cas d\'usage. Vous ne payez que quand votre bien est loué.'
-                : 'Propriétaires, publiez votre bien. Locataires, trouvez le vôtre. Flexibilité totale, zéro frais si vacant.'}
-            </motion.p>
-
-            {preLaunch && (
-              <p className="mt-3 text-xs text-white/40 max-w-lg">
-                Bail Code Civil réservé aux résidences non principales, mobilité professionnelle, étudiants en alternance.{' '}
-                <Link href="/legal/bail-code-civil" className="underline hover:text-white/70 transition-colors">
-                  Quel bail pour quel cas ?
-                </Link>
-              </p>
-            )}
-
-            {preLaunch ? (
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
-                className="mt-10 flex flex-wrap gap-3 items-center">
-                <Link
-                  href={ownerCta}
-                  className="bg-brand-blue text-white px-7 py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors"
-                >
-                  Réserver mes 60 jours offerts →
-                </Link>
-                <Link
-                  href={tenantCta}
-                  className="text-sm text-white/50 hover:text-white/80 transition-colors px-2"
-                >
-                  Je cherche un logement
-                </Link>
-              </motion.div>
-            ) : (
-              <>
-                <motion.form
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
-                  onSubmit={handleSearch} className="mt-10 flex gap-2 max-w-md">
-                  <input
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    type="text"
-                    placeholder="Ville, quartier..."
-                    className="flex-1 px-4 py-3.5 rounded-xl text-slate-900 text-sm focus:outline-none bg-white/95 placeholder:text-slate-400"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-brand-blue text-white px-6 py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors flex-shrink-0"
-                  >
-                    Rechercher
-                  </button>
-                </motion.form>
-                <Link href="/biens" className="mt-4 inline-block text-sm text-white/40 hover:text-white/70 transition-colors">
-                  Voir tous les biens disponibles →
-                </Link>
-              </>
-            )}
-
-            {/* Inline stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.55, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="mt-12 flex items-center gap-6">
-              <div>
-                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  <AnimatedCounter value={preLaunch ? 60 : 100} suffix={preLaunch ? ' j' : '%'} />
-                </p>
-                <p className="text-xs text-white/40 mt-0.5">{preLaunch ? 'Offerts à l\'ouverture' : 'En ligne'}</p>
-              </div>
-              <div className="w-px h-8 bg-white/10" />
-              <div>
-                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>1–24</p>
-                <p className="text-xs text-white/40 mt-0.5">Mois de location</p>
-              </div>
-              <div className="w-px h-8 bg-white/10" />
-              <div>
-                <p className="text-2xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>0 €</p>
-                <p className="text-xs text-white/40 mt-0.5">Si votre bien est vacant</p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right — clé 3D signature (tourne au fil du scroll) */}
-          <div className="hidden lg:block relative h-[540px]">
-            <KeyScene />
-
-            {/* Légende discrète */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.9, delay: 0.7 }}
-              className="absolute top-1 right-1 text-[11px] uppercase tracking-[0.2em] text-white/30 select-none pointer-events-none">
-              De la clé au bail
-            </motion.p>
-
-            {/* Carte preuve flottante — ancrage produit */}
-            <motion.div
-              initial={{ opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[300px] bg-white/95 backdrop-blur-sm rounded-xl p-4 border border-white/10 z-10"
-              style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.4)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                  ML
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-900">Marie L. a postulé</p>
-                  <p className="text-xs text-slate-400 truncate">CDI · 3 400 €/mois · Dossier complet</p>
-                </div>
-                <span className="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full font-medium flex-shrink-0">
-                  Vérifié
-                </span>
-              </div>
-            </motion.div>
-          </div>
-
-        </div>
-      </section>
+      {/* ── HERO immersif — montée sur Paris pilotée au scroll ── */}
+      <ParisScrollHero ownerCta={ownerCta} tenantCta={tenantCta} />
 
       {/* ── AVANTAGES ───────────────────────────────────────── */}
       <section className="py-24 px-4 bg-white">
