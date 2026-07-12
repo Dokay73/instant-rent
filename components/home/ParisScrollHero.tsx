@@ -108,7 +108,7 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
 
   return (
     <section ref={sectionRef} className="relative bg-brand-navy text-white" style={{ height: '320vh' }}>
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
         {/* Séquence Paris → réseau → logo */}
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
         {/* Grain filmique */}
@@ -120,11 +120,11 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
         {/* Beats */}
         <div className="relative z-10 flex h-full items-center">
           <div className="mx-auto w-full max-w-6xl px-5">
-            <div className="relative h-[360px] max-w-xl [text-shadow:0_2px_20px_rgba(3,7,20,0.55)]">
+            <div className="relative h-[440px] max-w-xl [text-shadow:0_2px_20px_rgba(3,7,20,0.55)] md:h-[380px]">
               {/* Beat 1 */}
               <div className={beatCls(0)}>
                 <span className="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue-light">Propriétaires · Paris</span>
-                <h1 className="text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl">
+                <h1 className="text-4xl font-bold leading-[1.06] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
                   Louez votre bien<br /><span className="text-brand-blue">sans vous engager 3 ans</span>
                 </h1>
                 <p className="mt-6 max-w-md text-lg leading-relaxed text-white/60">
@@ -134,13 +134,13 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
               {/* Beat 2 */}
               <div className={beatCls(1)}>
                 <span className="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue-light">La confiance</span>
-                <h2 className="text-4xl font-bold leading-[1.08] tracking-tight md:text-5xl lg:text-6xl">
+                <h2 className="text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
                   Des candidats<br /><span className="text-brand-blue">déjà vérifiés</span>
                 </h2>
                 <p className="mt-6 max-w-md text-lg leading-relaxed text-white/60">
                   Chaque dossier arrive complet et contrôlé. Vous choisissez, sans trier.
                 </p>
-                <div className="mt-7 w-[320px] rounded-xl border border-white/10 bg-white/95 p-4" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}>
+                <div className="mt-7 w-full max-w-[320px] rounded-xl border border-white/10 bg-white/95 p-4" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.45)' }}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-navy text-xs font-bold text-white">ML</div>
                     <div className="min-w-0 flex-1">
@@ -154,7 +154,7 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
               {/* Beat 3 */}
               <div className={beatCls(2)}>
                 <span className="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-brand-blue-light">En 24 heures</span>
-                <h2 className="text-4xl font-bold leading-[1.08] tracking-tight md:text-5xl lg:text-6xl">
+                <h2 className="text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
                   Un bail signé<br /><span className="text-brand-blue">en ligne</span>
                 </h2>
                 <p className="mt-6 max-w-md text-lg leading-relaxed text-white/60">
