@@ -26,6 +26,7 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
   const lastDrawn = useRef(-1)
   const [ready, setReady] = useState(false)
   const [beat, setBeat] = useState(0)
+  const [finale, setFinale] = useState(false) // logo HTML final (net, jamais rogné) — piloté par état + transition CSS
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
 
@@ -99,6 +100,9 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
     // beats 0,1,2 pendant Paris→réseau ; beat 3 = tout s'efface pour le LOGO final.
     const b = p < 0.30 ? 0 : p < 0.55 ? 1 : p < 0.72 ? 2 : 3
     setBeat((prev) => (prev === b ? prev : b))
+    // le logo final (net, jamais rogné) prend le relais sur la fin du scroll
+    const f = p > 0.80
+    setFinale((prev) => (prev === f ? prev : f))
   })
 
   const beatCls = (i: number) =>
@@ -166,6 +170,23 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Logo finale — wordmark HTML responsive, net & JAMAIS rogné (fix crop mobile).
+            Fond = navy EXACT de la dernière frame vidéo (#07152c) => le fondu couvre le
+            logo vidéo (rogné sur portrait) de façon invisible, sur mobile comme desktop. */}
+        <div
+          style={{ backgroundColor: '#07152c' }}
+          className={`pointer-events-none absolute inset-0 z-[24] flex items-center justify-center transition-opacity duration-700 ${finale ? 'opacity-100' : 'opacity-0'}`}
+          aria-hidden
+        >
+          <div className="flex flex-col items-start font-extrabold leading-[0.84] tracking-[-0.04em] text-white text-[16vw] sm:text-[13vw] md:text-[11vw] lg:text-[128px]">
+            <span className="relative">
+              <span className="absolute left-[0.035em] top-[0.02em] h-[0.23em] w-[0.23em] rounded-[0.06em] bg-brand-blue" style={{ boxShadow: '0 0 0.18em rgba(74,108,247,0.55)' }} />
+              instant
+            </span>
+            <span>rent</span>
           </div>
         </div>
 
