@@ -49,3 +49,4 @@ e2e-bot.mjs
 **/__pycache__/
 *.pyc
 public/hero/*.gif
+public/hero/*.mp4

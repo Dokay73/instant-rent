@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion, useScroll, useMotionValueEvent } from 'motion/react'
 
-const FRAME_COUNT = 150
+const FRAME_COUNT = 120
 const framePath = (i: number) => `/hero/paris/f${String(i).padStart(3, '0')}.webp`
 
 export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: string; tenantCta: string }) {
@@ -20,7 +20,6 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imagesRef = useRef<HTMLImageElement[]>([])
   const lastDrawn = useRef(-1)
-  const veilRef = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(false)
   const [beat, setBeat] = useState(0) // 0,1,2
 
@@ -98,12 +97,9 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
       const n = nearestLoaded(idx)
       if (n >= 0) requestAnimationFrame(() => draw(n))
     }
-    const b = p < 0.36 ? 0 : p < 0.68 ? 1 : 2
+    // beats 0,1,2 pendant Paris→réseau ; beat 3 = tout le texte s'efface pour le LOGO final.
+    const b = p < 0.30 ? 0 : p < 0.55 ? 1 : p < 0.72 ? 2 : 3
     setBeat((prev) => (prev === b ? prev : b))
-    // Voile navy qui REVIENT en fin de scroll — set direct sur le DOM = zéro lag.
-    if (veilRef.current) {
-      veilRef.current.style.opacity = p < 0.72 ? '0' : String(Math.min(0.88, ((p - 0.72) / 0.23) * 0.88))
-    }
   })
 
   const beatCls = (i: number) =>
@@ -120,8 +116,6 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
         <div className="absolute inset-0 bg-gradient-to-r from-brand-navy/75 via-brand-navy/15 to-transparent" />
         {/* Léger dégradé bas pour le CTA */}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-brand-navy/65 to-transparent" />
-        {/* Voile navy qui REVIENT progressivement en fin de scroll (piloté au scroll, sans transition) */}
-        <div ref={veilRef} className="absolute inset-0 bg-brand-navy" style={{ opacity: 0, transition: 'none' }} aria-hidden />
 
         {/* Beats */}
         <div className="relative z-10 flex h-full items-center">
@@ -177,8 +171,8 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
           </div>
         </div>
 
-        {/* CTA épinglé */}
-        <div className="absolute inset-x-0 bottom-9 z-20">
+        {/* CTA épinglé — s'efface pour laisser le logo final seul */}
+        <div className={`absolute inset-x-0 bottom-9 z-20 transition-opacity duration-500 ${beat === 3 ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5">
             <Link href={ownerCta} className="rounded-xl bg-brand-blue px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-brand-blue-deep">
               Réserver mes 60 jours offerts →
