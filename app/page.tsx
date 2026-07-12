@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import PreLaunchBanner from '@/components/PreLaunchBanner'
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion } from 'motion/react'
 import ScrollReveal from '@/components/ui/ScrollReveal'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
@@ -13,6 +12,13 @@ import AnimatedBackground from '@/components/ui/AnimatedBackground'
 import Reveal, { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { isPreLaunch } from '@/lib/launch'
 import PioneerSpots from '@/components/PioneerSpots'
+import dynamic from 'next/dynamic'
+
+// Clé 3D (WebGL) — rendu client uniquement, fallback discret pendant le chargement
+const KeyScene = dynamic(() => import('@/components/three/KeyScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full" aria-hidden />,
+})
 
 const LANDLORD_BENEFITS = [
   {
@@ -201,51 +207,26 @@ export default function HomePage() {
             </motion.div>
           </div>
 
-          {/* Right — property card mockup */}
-          <div className="hidden lg:flex flex-col gap-3">
-            {/* Main card */}
+          {/* Right — clé 3D signature (tourne au fil du scroll) */}
+          <div className="hidden lg:block relative h-[540px]">
+            <KeyScene />
+
+            {/* Légende discrète */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.9, delay: 0.7 }}
+              className="absolute top-1 right-1 text-[11px] uppercase tracking-[0.2em] text-white/30 select-none pointer-events-none">
+              De la clé au bail
+            </motion.p>
+
+            {/* Carte preuve flottante — ancrage produit */}
             <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
-              whileHover={{ y: -4 }}
-              className="bg-white rounded-2xl p-5 shadow-2xl cursor-pointer" style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.45)' }}>
-              {/* Property photo */}
-              <div className="rounded-xl h-36 mb-4 relative overflow-hidden bg-brand-navy">
-                <Image
-                  src="/hero/listing-apartment.jpg"
-                  alt="Appartement meublé parisien : séjour lumineux avec parquet en point de Hongrie"
-                  fill
-                  sizes="(min-width: 1024px) 400px, 1px"
-                  className="object-cover"
-                  preload
-                />
-                {/* Scrim : lisibilité du badge en haut + assise visuelle en bas */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/30" />
-                <span className="absolute top-3 left-3 bg-brand-blue text-white text-xs px-2.5 py-1 rounded-lg font-medium">
-                  Disponible
-                </span>
-              </div>
-
-              <p className="font-semibold text-slate-900 text-sm">Appartement meublé · 38 m²</p>
-              <p className="text-xs text-slate-400 mt-0.5">Paris 11ème · Métro Voltaire</p>
-
-              <div className="flex items-end justify-between mt-4 pt-4 border-t border-slate-100">
-                <div>
-                  <p className="text-xl font-bold text-slate-900" style={{ fontVariantNumeric: 'tabular-nums' }}>1 290 €</p>
-                  <p className="text-xs text-slate-400">charges comprises / mois</p>
-                </div>
-                <span className="text-xs text-slate-400">3 – 18 mois</span>
-              </div>
-            </motion.div>
-
-            {/* Application card */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.55, ease: [0.21, 0.47, 0.32, 0.98] }}
-              whileHover={{ x: 4 }}
-              className="bg-white rounded-xl p-4 ml-8 border border-slate-100" style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.3)' }}>
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[300px] bg-white/95 backdrop-blur-sm rounded-xl p-4 border border-white/10 z-10"
+              style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.4)' }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   ML
@@ -254,8 +235,8 @@ export default function HomePage() {
                   <p className="text-xs font-semibold text-slate-900">Marie L. a postulé</p>
                   <p className="text-xs text-slate-400 truncate">CDI · 3 400 €/mois · Dossier complet</p>
                 </div>
-                <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-medium flex-shrink-0">
-                  À traiter
+                <span className="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full font-medium flex-shrink-0">
+                  Vérifié
                 </span>
               </div>
             </motion.div>
