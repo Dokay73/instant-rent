@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion, useScroll, useMotionValueEvent } from 'motion/react'
 
-const FRAME_COUNT = 151
+const FRAME_COUNT = 150
 const framePath = (i: number) => `/hero/paris/f${String(i).padStart(3, '0')}.webp`
 
 export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: string; tenantCta: string }) {
