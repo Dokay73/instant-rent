@@ -90,12 +90,20 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Fail-closed : on ne marque JAMAIS "signé" sans avoir stocké le PDF scellé.
+      // Sinon le statut "signé" pointerait vers un bail NON scellé. On renvoie 500 →
+      // Documenso retentera le webhook (auto-réparation des échecs transitoires).
+      if (!signedPdfPath) {
+        console.error(`DOCUMENT_COMPLETED sans PDF scellé récupéré pour ${contract.application_id} — non marqué signé`)
+        return NextResponse.json({ error: 'PDF scellé indisponible, retry attendu' }, { status: 500 })
+      }
+
       await supabaseAdmin
         .from('contracts')
         .update({
           signature_status: 'signed',
           signed_at: new Date().toISOString(),
-          ...(signedPdfPath ? { pdf_url: signedPdfPath } : {}),
+          pdf_url: signedPdfPath,
         })
         .eq('application_id', contract.application_id)
     }

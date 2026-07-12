@@ -66,13 +66,23 @@ export default function RegisterPage() {
         launchPromoMonths = 2
       }
 
-      await supabase.from('profiles').upsert({
-        id: signUpData.user.id,
+      // La ligne `profiles` est déjà créée par le trigger handle_new_user au signUp.
+      // On fait un UPDATE (et non un upsert) : `profiles.role` est NOT NULL sans défaut
+      // et n'est pas dans ce payload — un INSERT/upsert échouerait sur la contrainte
+      // (c'est ce qui empêchait cgu_accepted_at d'être enregistré). Un UPDATE ne
+      // re-valide pas les NOT NULL des colonnes non fournies.
+      // (has_launch_promo : colonne inexistante, retirée ; promo recalculée au checkout.)
+      const { error: profileError } = await supabase.from('profiles').update({
         full_name: fullName,
         cgu_accepted_at: new Date().toISOString(),
-        has_launch_promo: hasPromo,
         launch_promo_months: launchPromoMonths,
-      })
+      }).eq('id', signUpData.user.id)
+      if (profileError) {
+        console.error('Enregistrement du profil échoué:', profileError.message)
+        setError("Compte créé, mais l'enregistrement du profil a échoué. Réessayez ou contactez le support.")
+        setLoading(false)
+        return
+      }
     }
 
     router.push('/dashboard')

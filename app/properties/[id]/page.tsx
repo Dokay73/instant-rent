@@ -42,6 +42,16 @@ export default async function PropertyPage({
     notFound()
   }
 
+  // Nom du propriétaire : le join `profiles` ne remonte que pour le propriétaire
+  // lui-même (RLS). Pour tout autre visiteur (dont anonyme = l'essentiel du trafic),
+  // on le récupère via une fonction SECURITY DEFINER limitée aux biens PUBLIÉS,
+  // qui ne renvoie QUE le nom (aucune autre donnée du profil).
+  let ownerName: string | null = property.profiles?.full_name ?? null
+  if (!ownerName) {
+    const { data: publicName } = await supabase.rpc('get_published_owner_name', { prop_id: id })
+    if (typeof publicName === 'string' && publicName) ownerName = publicName
+  }
+
   const totalRent = property.rent_hc + property.charges
 
   return (
@@ -212,14 +222,14 @@ export default async function PropertyPage({
             </div>
 
             {/* Propriétaire */}
-            {property.profiles?.full_name && (
+            {ownerName && (
               <div className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#0B1F4B]/10 flex items-center justify-center text-[#0B1F4B] text-sm font-bold flex-shrink-0">
-                  {property.profiles.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                  {ownerName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">Propriétaire</p>
-                  <p className="text-sm font-semibold text-slate-900">{property.profiles.full_name}</p>
+                  <p className="text-sm font-semibold text-slate-900">{ownerName}</p>
                 </div>
               </div>
             )}

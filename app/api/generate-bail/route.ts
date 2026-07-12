@@ -92,9 +92,39 @@ export async function POST(req: NextRequest) {
   const landlordProfile = property.profiles
   const tenantProfile = application.profiles
 
-  // Vérifier que l'user est soit le propriétaire soit le locataire
-  if (property.owner_id !== user.id && application.tenant_id !== user.id) {
+  // Seul le PROPRIÉTAIRE génère le bail (il fixe start_date et déclenche la signature).
+  // Le locataire n'a jamais à générer/écraser le PDF ni figer les termes.
+  if (property.owner_id !== user.id) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+  }
+
+  // La candidature doit être VALIDÉE (paiement effectué via le webhook Stripe) avant
+  // toute génération de bail. Empêche un locataire d'auto-générer un bail — et donc
+  // d'exposer la PII du bailleur — sans paiement ni accord du propriétaire.
+  if (application.status !== 'validated') {
+    return NextResponse.json(
+      { error: 'La candidature doit être validée avant de générer le bail.' },
+      { status: 403 }
+    )
+  }
+
+  // Intégrité légale : ne jamais régénérer/écraser un bail dont la signature est
+  // engagée (pending) ou aboutie (signed) — sinon on remplace le PDF scellé par un
+  // document non signé tout en gardant le statut "signé".
+  const { data: existingContracts, error: contractsErr } = await supabaseAdmin
+    .from('contracts')
+    .select('signature_status')
+    .eq('application_id', applicationId)
+  // Fail-closed : si on ne peut pas lire l'état de signature, on REFUSE de régénérer
+  // (ne jamais risquer d'écraser un PDF scellé parce qu'une lecture a échoué).
+  if (contractsErr) {
+    return NextResponse.json({ error: 'Vérification du bail impossible, réessayez.' }, { status: 500 })
+  }
+  if ((existingContracts ?? []).some(c => c.signature_status === 'pending' || c.signature_status === 'signed')) {
+    return NextResponse.json(
+      { error: 'Le bail est déjà en cours de signature ou signé : régénération interdite.' },
+      { status: 409 }
+    )
   }
 
   // ── Date de prise d'effet : choisie par les parties, jamais implicite ──

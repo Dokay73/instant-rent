@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { isAdminEmail } from '@/lib/launch'
 import { NextResponse } from 'next/server'
 
 const supabase = createClient(
@@ -8,7 +10,13 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   try {
-    const { keepEmails = [] } = await request.json()
+    // Endpoint destructeur (service_role) : réservé à l'admin, côté serveur.
+    const authClient = await createServerClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user || !isAdminEmail(user.email)) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+    }
+    await request.json().catch(() => ({}))
 
     // Supprime tous les bots (test-*@example.com)
     const { data, error } = await supabase

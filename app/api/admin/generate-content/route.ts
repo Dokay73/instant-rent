@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateDailyContent } from '@/lib/agents/content-generator'
-
-const ADMIN_EMAILS = ['hakangdz91@gmail.com']
+import { isAdminEmail } from '@/lib/launch'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +13,7 @@ export async function POST(_req: NextRequest) {
   try {
     const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !ADMIN_EMAILS.includes(user.email ?? '')) {
+    if (!user || !isAdminEmail(user.email)) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
     }
 

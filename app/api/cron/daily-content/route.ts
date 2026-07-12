@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { generateDailyContent } from '@/lib/agents/content-generator'
 import { sendDailyContentReviewEmail } from '@/lib/email'
+import { ADMIN_EMAILS } from '@/lib/launch'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const ADMIN_EMAIL = 'hakangdz91@gmail.com'
-
 export async function GET(req: NextRequest) {
-  // Sécurité minimale : vérifier le header d'autorisation Vercel Cron
+  // Fail-closed : sans CRON_SECRET configuré, on refuse (sinon la route serait publique
+  // et déclenchable par n'importe qui — génération de contenu + email à volonté).
   const authHeader = req.headers.get('authorization')
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     // 4. Envoyer email de validation
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://instant-rent-six.vercel.app'
     await sendDailyContentReviewEmail({
-      email: ADMIN_EMAIL,
+      email: ADMIN_EMAILS[0],
       contents: inserted,
       appUrl,
     })

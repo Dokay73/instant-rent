@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import {
   sendNewApplicationEmail,
   sendApplicationResponseEmail,
   sendNewMessageEmail,
-  sendWaitlistWelcomeEmail,
 } from '@/lib/email'
 
 const supabase = createClient(
@@ -13,6 +13,12 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  // Authentification obligatoire : sans ça, cette route était un relais d'emails
+  // ouvert (spam via Resend au nom d'Instant Rent → délivrabilité grillée).
+  const authClient = await createServerClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
   const body = await req.json()
   const { type } = body
 
@@ -23,7 +29,7 @@ export async function POST(req: NextRequest) {
       const { data: app } = await supabase
         .from('applications')
         .select(`
-          id, property_id,
+          id, property_id, tenant_id,
           properties(title, address, owner_id),
           profiles!applications_tenant_id_fkey(full_name)
         `)
@@ -31,6 +37,9 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (!app) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+      // Seul le locataire de cette candidature peut déclencher la notif au propriétaire.
+      if (app.tenant_id !== user.id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
 
       const property = Array.isArray(app.properties) ? app.properties[0] : app.properties
       const tenant = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles
@@ -58,7 +67,7 @@ export async function POST(req: NextRequest) {
         .from('applications')
         .select(`
           id, tenant_id,
-          properties(title),
+          properties(title, owner_id),
           profiles!applications_tenant_id_fkey(full_name)
         `)
         .eq('id', applicationId)
@@ -68,6 +77,9 @@ export async function POST(req: NextRequest) {
 
       const property = Array.isArray(app.properties) ? app.properties[0] : app.properties
       const tenant = Array.isArray(app.profiles) ? app.profiles[0] : app.profiles
+
+      // Seul le propriétaire du bien peut envoyer une réponse de candidature.
+      if (property?.owner_id !== user.id) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
 
       const { data: tenantAuth } = await supabase.auth.admin.getUserById(app.tenant_id)
 
@@ -82,7 +94,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === 'new_message') {
-      const { conversationId, senderId, messagePreview } = body
+      const { conversationId, messagePreview } = body
 
       const { data: conv } = await supabase
         .from('conversations')
@@ -96,6 +108,13 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (!conv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+      // L'expéditeur est l'utilisateur authentifié (jamais un senderId fourni par le client),
+      // et il doit être un participant de la conversation.
+      const senderId = user.id
+      if (senderId !== conv.owner_id && senderId !== conv.tenant_id) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
+      }
 
       const property = Array.isArray(conv.properties) ? conv.properties[0] : conv.properties
       const owner = Array.isArray(conv.owner) ? conv.owner[0] : conv.owner
@@ -113,16 +132,9 @@ export async function POST(req: NextRequest) {
           recipientName: recipientProfile?.full_name ?? 'Utilisateur',
           senderName: senderProfile?.full_name ?? 'Quelqu\'un',
           propertyTitle: property?.title ?? 'un bien',
-          messagePreview: messagePreview.slice(0, 200),
+          messagePreview: (messagePreview ?? '').slice(0, 200),
           conversationId,
         })
-      }
-    }
-
-    if (type === 'waitlist_welcome') {
-      const { email, fullName } = body
-      if (email && fullName) {
-        await sendWaitlistWelcomeEmail({ email, fullName })
       }
     }
 

@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/Navbar'
 import { redirect } from 'next/navigation'
-
-const ADMIN_EMAILS = ['hakangdz91@gmail.com']
+import { isAdminEmail } from '@/lib/launch'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +9,7 @@ export default async function AdminWaitlistPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || !ADMIN_EMAILS.includes(user.email ?? '')) {
+  if (!user || !isAdminEmail(user.email)) {
     redirect('/')
   }
 

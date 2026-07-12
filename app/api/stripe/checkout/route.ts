@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -37,18 +38,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Candidature invalide' }, { status: 400 })
   }
 
-  // Vérifier la promo de lancement (2 à 12 mois selon parrainage waitlist)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('has_launch_promo, launch_promo_months')
-    .eq('id', user.id)
-    .single()
-
+  // Promo de lancement (2 à 12 mois selon parrainage) dérivée de façon AUTORITAIRE
+  // depuis la waitlist via la clé service_role — jamais d'un flag de profil que
+  // l'utilisateur pourrait forger côté client (ferme l'exploit d'auto-attribution).
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   let trialDays: number | undefined
-  if (profile?.has_launch_promo) {
-    const rawMonths = profile.launch_promo_months ?? 2
-    const cappedMonths = Math.min(Math.max(rawMonths, 0), 12)
-    trialDays = cappedMonths * 30
+  if (user.email) {
+    const { data: wl } = await supabaseAdmin
+      .from('waitlist')
+      .select('role, referral_code')
+      .eq('email', user.email.toLowerCase())
+      .maybeSingle()
+    if (wl?.role === 'owner') {
+      let months = 2
+      if (wl.referral_code) {
+        const { count } = await supabaseAdmin
+          .from('waitlist')
+          .select('id', { count: 'exact', head: true })
+          .eq('referred_by', wl.referral_code)
+        months = Math.min(2 + (count ?? 0), 12)
+      }
+      trialDays = Math.min(Math.max(months, 0), 12) * 30
+    }
   }
 
   // Fail-fast : sans APP_URL, Stripe recevrait des URLs invalides ("undefined/dashboard")

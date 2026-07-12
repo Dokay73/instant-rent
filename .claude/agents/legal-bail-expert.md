@@ -41,7 +41,7 @@ de mission. En résumé :
   domicilié). C'est une décision stratégique actée : on ne pivote pas vers loi 89.
   Ton travail est de **sécuriser** ce choix, pas de le contester.
 - Durées : 1 à 24 mois, ferme. Meublé majoritairement. Paris uniquement au lancement.
-- Signature électronique via **Yousign** (niveau simple, `electronic_signature`).
+- Signature électronique via **Documenso** (self-hosted, niveau simple eIDAS). PDF scellé + piste d'audit. (Anciennement Yousign/DocuSeal — ne plus référencer.)
 - Le bail est un **template déterministe** (React-PDF) rempli avec les données du bien
   et des profils — aucune génération par IA, aucun texte libre.
 

@@ -109,9 +109,9 @@ Règles pour un fond animé premium (pas gadget) :
 5. **Perf** : pas de reflow, `pointer-events:none`, `contain: paint`, dimension fixe, pas de LCP dégradé.
 6. **Cohérence marque** : palette Instant Rent (bleus `#0B1F4B` / `#4A6CF7`), premium parisien,
    surtout pas néon criard.
-Note : des composants `HeroAurora`/`HeroAmbient` existent sur la branche `chore/ui-ux-tools`
-(non mergée) — tu peux t'en inspirer via `git show chore/ui-ux-tools:components/home/HeroAurora.tsx`
-mais tu vises MIEUX, pas juste un copier-coller.
+Note : un fond animé aurora est **déjà déployé sur master** dans `components/ui/AnimatedBackground.tsx`
+(+ `AnimatedCounter.tsx`) — lis-le avant d'en proposer un nouveau, réutilise/améliore l'existant
+plutôt que d'introduire un doublon. Tu vises MIEUX, jamais un copier-coller redondant.
 
 ---
 

@@ -40,29 +40,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Candidature invalide' }, { status: 400 })
     }
 
-    // Récupérer l'abonnement Stripe actif
+    // Récupérer l'abonnement Stripe actif (maybeSingle : 0 ligne ne doit pas lever d'erreur)
     const { data: subscription } = await supabaseAdmin
       .from('subscriptions')
       .select('stripe_sub_id')
       .eq('property_id', propertyId)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
 
-    // Annuler dans Stripe (non bloquant si ça échoue)
+    // Annuler dans Stripe AVANT de toucher la base. Si l'annulation échoue VRAIMENT, on
+    // s'arrête (marquer résilié en base alors que Stripe facture encore serait pire).
+    // MAIS un abo déjà annulé/introuvable (resource_missing) = plus de facturation → on
+    // laisse passer vers le nettoyage base (idempotent), sinon un retry après succès
+    // partiel resterait bloqué à jamais avec une base incohérente.
     if (subscription?.stripe_sub_id) {
       try {
         await stripe.subscriptions.cancel(subscription.stripe_sub_id)
       } catch (err) {
-        console.error('Stripe cancel error (non bloquant):', err)
+        // Un abo déjà annulé ou introuvable = plus de facturation → on laisse passer vers
+        // le nettoyage base (sinon un retry après succès partiel resterait bloqué à jamais).
+        // Stripe ne renvoie 'resource_missing' que si l'ID est INEXISTANT ; un abo DÉJÀ
+        // annulé (toujours présent, status='canceled') lève une autre erreur → on vérifie
+        // le statut réel avant de décider.
+        let alreadyGone = false
+        const code = (err && typeof err === 'object' && 'code' in err) ? (err as { code?: string }).code : undefined
+        if (code === 'resource_missing') {
+          alreadyGone = true
+        } else {
+          try {
+            const s = await stripe.subscriptions.retrieve(subscription.stripe_sub_id)
+            // Tout statut terminal non-facturant = "déjà parti" (canceled, ou incomplete_expired
+            // quand le 1er paiement n'a jamais abouti).
+            if (s.status === 'canceled' || s.status === 'incomplete_expired') alreadyGone = true
+          } catch { /* retrieve échoué → on traite comme une vraie erreur ci-dessous */ }
+        }
+        if (!alreadyGone) {
+          console.error('Stripe cancel error:', err)
+          return NextResponse.json(
+            { error: "L'annulation de l'abonnement a échoué côté paiement. Réessayez dans un instant." },
+            { status: 502 }
+          )
+        }
+        console.warn('Abonnement déjà annulé côté Stripe — nettoyage base idempotent.')
       }
     }
 
-    // Mettre à jour la base de données
-    await supabaseAdmin
+    // Nettoyage base. Stripe est déjà résilié → si l'update critique de l'abonnement échoue,
+    // on remonte une 500 explicite (ne pas répondre success alors que la base n'est pas à jour).
+    const { error: subUpdErr } = await supabaseAdmin
       .from('subscriptions')
-      .update({ is_active: false })
+      .update({ is_active: false, ended_at: new Date().toISOString() })
       .eq('property_id', propertyId)
       .eq('is_active', true)
+    if (subUpdErr) {
+      console.error('Cancel: échec update subscriptions:', subUpdErr)
+      return NextResponse.json({ error: 'Abonnement résilié côté paiement, mais mise à jour incomplète. Réessayez.' }, { status: 500 })
+    }
 
     await supabaseAdmin
       .from('properties')
