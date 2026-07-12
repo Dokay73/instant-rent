@@ -2,16 +2,18 @@
 
 /**
  * ParisScrollHero — hero immersif "Paris → réseau → logo" piloté au scroll.
- * Une VIDÉO (public/hero/paris.mp4, débandée + upscalée) scrubée par la progression
- * de scroll d'une section épinglée (video.currentTime = progress × durée). Bien plus
- * léger et net sur les dégradés (ciel) qu'une séquence d'images. Par-dessus : grain
- * filmique CSS, beats de texte (index d'état), CTA épinglé, barre de progression.
- * Les beats s'effacent avant le logo final → finale de marque propre.
+ * Frames pré-chargées (public/hero/paris/, débandées) dessinées sur un canvas selon
+ * la progression de scroll d'une section épinglée = scrub FLUIDE (technique Apple).
+ * Par-dessus : grain filmique CSS, beats de texte (index d'état), CTA épinglé,
+ * barre de progression. Les beats s'effacent avant le logo final.
  */
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion, useScroll, useMotionValueEvent } from 'motion/react'
+
+const FRAME_COUNT = 120
+const framePath = (i: number) => `/hero/paris/f${String(i).padStart(3, '0')}.webp`
 
 // Grain filmique (SVG turbulence en data-URI, tuilé) — masque le banding résiduel.
 const GRAIN =
@@ -19,40 +21,80 @@ const GRAIN =
 
 export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: string; tenantCta: string }) {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const target = useRef(0)
-  const rafPending = useRef(false)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const imagesRef = useRef<HTMLImageElement[]>([])
+  const lastDrawn = useRef(-1)
   const [ready, setReady] = useState(false)
   const [beat, setBeat] = useState(0)
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] })
 
-  // Prépare la vidéo : pause + première frame.
+  function draw(idx: number) {
+    const canvas = canvasRef.current
+    const img = imagesRef.current[idx]
+    if (!canvas || !img || !img.complete || !img.naturalWidth) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const cw = canvas.width, ch = canvas.height
+    const ir = img.naturalWidth / img.naturalHeight
+    const cr = cw / ch
+    let dw: number, dh: number, dx: number, dy: number
+    if (ir > cr) { dh = ch; dw = ch * ir; dx = (cw - dw) / 2; dy = 0 }
+    else { dw = cw; dh = cw / ir; dx = 0; dy = (ch - dh) / 2 }
+    ctx.drawImage(img, dx, dy, dw, dh)
+    lastDrawn.current = idx
+  }
+
+  function nearestLoaded(idx: number) {
+    const imgs = imagesRef.current
+    if (imgs[idx]?.complete && imgs[idx]?.naturalWidth) return idx
+    for (let d = 1; d < FRAME_COUNT; d++) {
+      const a = idx - d, b = idx + d
+      if (a >= 0 && imgs[a]?.complete && imgs[a]?.naturalWidth) return a
+      if (b < FRAME_COUNT && imgs[b]?.complete && imgs[b]?.naturalWidth) return b
+    }
+    return -1
+  }
+
+  // Préchargement des frames
   useEffect(() => {
-    const v = videoRef.current
-    if (!v) return
-    v.pause()
-    const onReady = () => { setReady(true); try { v.currentTime = 0.001 } catch {} }
-    if (v.readyState >= 2) onReady()
-    else v.addEventListener('loadeddata', onReady, { once: true })
-    return () => v.removeEventListener('loadeddata', onReady)
+    const imgs: HTMLImageElement[] = []
+    for (let i = 1; i <= FRAME_COUNT; i++) {
+      const img = new window.Image()
+      img.decoding = 'async'
+      img.src = framePath(i)
+      if (i === 1) img.onload = () => { draw(0); setReady(true) }
+      imgs.push(img)
+    }
+    imagesRef.current = imgs
   }, [])
 
-  // Le scroll pilote currentTime (throttle rAF = 1 seek/frame) + le beat actif.
+  // Canvas responsive (netteté DPR)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    function resize() {
+      const parent = canvas!.parentElement
+      if (!parent) return
+      const rect = parent.getBoundingClientRect()
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas!.width = Math.round(rect.width * dpr)
+      canvas!.height = Math.round(rect.height * dpr)
+      const n = nearestLoaded(Math.round(scrollYProgress.get() * (FRAME_COUNT - 1)))
+      if (n >= 0) draw(n)
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Le scroll pilote la frame + le beat actif
   useMotionValueEvent(scrollYProgress, 'change', (p) => {
-    const v = videoRef.current
-    if (v && v.duration) {
-      target.current = Math.min(v.duration - 0.05, Math.max(0, p * v.duration))
-      if (!rafPending.current) {
-        rafPending.current = true
-        requestAnimationFrame(() => {
-          rafPending.current = false
-          const vid = videoRef.current
-          if (vid && Number.isFinite(target.current)) {
-            try { vid.currentTime = target.current } catch { /* seek en cours */ }
-          }
-        })
-      }
+    const idx = Math.min(FRAME_COUNT - 1, Math.max(0, Math.round(p * (FRAME_COUNT - 1))))
+    if (idx !== lastDrawn.current) {
+      const n = nearestLoaded(idx)
+      if (n >= 0) requestAnimationFrame(() => draw(n))
     }
     // beats 0,1,2 pendant Paris→réseau ; beat 3 = tout s'efface pour le LOGO final.
     const b = p < 0.30 ? 0 : p < 0.55 ? 1 : p < 0.72 ? 2 : 3
@@ -67,16 +109,8 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
   return (
     <section ref={sectionRef} className="relative bg-brand-navy text-white" style={{ height: '320vh' }}>
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        {/* Vidéo Paris → réseau → logo (scrubée au scroll) */}
-        <video
-          ref={videoRef}
-          src="/hero/paris.mp4"
-          muted
-          playsInline
-          preload="auto"
-          className="absolute inset-0 h-full w-full object-cover"
-          aria-hidden
-        />
+        {/* Séquence Paris → réseau → logo */}
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
         {/* Grain filmique */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.10] mix-blend-soft-light" style={{ backgroundImage: GRAIN, backgroundSize: '140px 140px' }} aria-hidden />
         {/* Voile gauche léger (lisibilité texte) + léger dégradé bas (CTA) */}
