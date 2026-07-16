@@ -43,39 +43,14 @@ export default function RegisterPage() {
     }
 
     if (signUpData.user) {
-      // Vérifier si l'user était pré-inscrit en tant que propriétaire (promo)
-      const { data: waitlistEntry } = await supabase
-        .from('waitlist')
-        .select('role, referral_code')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle()
-
-      const hasPromo = waitlistEntry?.role === 'owner'
-
-      // Calcul des mois offerts via le système de parrainage
-      // (2 mois base + 1 par filleul, plafond 12)
-      let launchPromoMonths: number | null = null
-      if (hasPromo && waitlistEntry?.referral_code) {
-        const { count } = await supabase
-          .from('waitlist')
-          .select('id', { count: 'exact', head: true })
-          .eq('referred_by', waitlistEntry.referral_code)
-        const referralCount = count ?? 0
-        launchPromoMonths = Math.min(2 + referralCount, 12)
-      } else if (hasPromo) {
-        launchPromoMonths = 2
-      }
-
       // La ligne `profiles` est déjà créée par le trigger handle_new_user au signUp.
       // On fait un UPDATE (et non un upsert) : `profiles.role` est NOT NULL sans défaut
       // et n'est pas dans ce payload — un INSERT/upsert échouerait sur la contrainte
       // (c'est ce qui empêchait cgu_accepted_at d'être enregistré). Un UPDATE ne
       // re-valide pas les NOT NULL des colonnes non fournies.
-      // (has_launch_promo : colonne inexistante, retirée ; promo recalculée au checkout.)
       const { error: profileError } = await supabase.from('profiles').update({
         full_name: fullName,
         cgu_accepted_at: new Date().toISOString(),
-        launch_promo_months: launchPromoMonths,
       }).eq('id', signUpData.user.id)
       if (profileError) {
         console.error('Enregistrement du profil échoué:', profileError.message)

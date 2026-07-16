@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react'
 
-// Offre pionniers : 60 jours offerts aux 50 premiers propriétaires.
+// Offre pionniers : 1er placement offert aux 50 premiers propriétaires.
 // On formule la rareté comme une CARACTÉRISTIQUE de l'offre (« les 50 premiers »),
 // PAS comme un décompte live : un compteur à faible volume révèle la traction et
 // paraît mort s'il stagne. La ligne statique reste 100% vraie et ne se périme jamais.
@@ -15,7 +15,7 @@ function Dot() {
 
 export default function PioneerSpots({ preLaunch }: { preLaunch: boolean }) {
   const label = preLaunch
-    ? '60 jours offerts aux 50 premiers propriétaires'
+    ? '1er placement offert aux 50 premiers propriétaires'
     : 'Bail Code Civil & mobilité · 100% en ligne · 1 à 24 mois'
 
   return (

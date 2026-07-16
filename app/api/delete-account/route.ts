@@ -77,6 +77,18 @@ export async function POST(_req: NextRequest) {
       }
     }
 
+    // RGPD : supprimer le client Stripe du proprio (carte enregistrée + PII) avant
+    // d'effacer le profil qui porte la référence. Best-effort (jamais bloquant).
+    const { data: prof } = await supabaseAdmin
+      .from('profiles').select('stripe_customer_id').eq('id', user.id).maybeSingle()
+    if (prof?.stripe_customer_id) {
+      try {
+        await stripe.customers.del(prof.stripe_customer_id)
+      } catch (err) {
+        console.error('Stripe customer delete error:', err)
+      }
+    }
+
     // Supprimer le profil (cascade → favoris, conversations, messages, applications, properties, contracts, subscriptions)
     await supabaseAdmin.from('profiles').delete().eq('id', user.id)
 

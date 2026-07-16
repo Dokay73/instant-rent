@@ -18,7 +18,7 @@ const CATEGORIES: Category[] = [
       },
       {
         q: 'Quand est-ce que je commence à payer ?',
-        a: 'Uniquement quand votre bien est effectivement loué. Tant que personne n\'a signé de bail via Instant Rent, vous payez 0 €. L\'abonnement de 29 €/mois s\'active à la signature et s\'arrête automatiquement à la fin du bail.',
+        a: 'Uniquement quand votre bien est effectivement loué. Tant que personne n\'a signé de bail via Instant Rent, vous payez 0 €. Le jour où le bail est signé, un forfait unique (290 à 490 € selon le loyer) est prélevé une seule fois — pas d\'abonnement, pas de prélèvement mensuel.',
       },
       {
         q: 'Comment suis-je payé pour les loyers ?',
@@ -37,8 +37,8 @@ const CATEGORIES: Category[] = [
         a: 'Non, mais vous devez respecter les règles d\'encadrement des loyers de votre commune. Au moment de la publication, on vous demande si votre bien est en zone tendue pour vous le rappeler. C\'est votre responsabilité de fixer un loyer conforme.',
       },
       {
-        q: 'Comment résilier mon abonnement ?',
-        a: 'Lorsque le bail prend fin (à la date convenue ou par résiliation anticipée), votre abonnement Stripe s\'arrête automatiquement. Vous pouvez aussi annuler manuellement depuis votre dashboard via le bouton "Résilier le bail".',
+        q: 'Y a-t-il un abonnement ou un engagement ?',
+        a: 'Non. Le forfait est prélevé une seule fois, à la signature du bail. Aucun abonnement, aucun prélèvement mensuel, aucun engagement de durée. Quand le bail prend fin, il n\'y a rien à résilier — vous pouvez reproposer votre bien quand vous voulez.',
       },
     ],
   },
@@ -78,19 +78,19 @@ const CATEGORIES: Category[] = [
     faqs: [
       {
         q: 'Combien coûte Instant Rent ?',
-        a: '29 €/mois par bien loué. Pour les locataires, c\'est entièrement gratuit. Pour les propriétaires, vous ne payez que lorsque votre bien est effectivement occupé via la plateforme.',
+        a: 'Un forfait unique par mise en location réussie : 290 € (loyer < 1 200 €), 390 € (1 200–2 200 €) ou 490 € (> 2 200 €). Payé une seule fois, le jour de la signature du bail. Pour les locataires, c\'est entièrement gratuit. 0 % de commission sur vos loyers.',
       },
       {
         q: 'Y a-t-il des frais cachés ?',
-        a: 'Non. 29 €/mois, pas de frais d\'inscription, pas de frais de publication, pas de commission sur les loyers. C\'est tout.',
+        a: 'Non. Un seul forfait à la signature (290 à 490 € selon le loyer), pas de frais d\'inscription, pas de frais de publication, pas de commission sur les loyers, pas d\'abonnement. C\'est tout.',
       },
       {
         q: 'Puis-je déduire les frais de mes impôts ?',
-        a: 'Les 29 €/mois sont des frais de gestion locative, généralement déductibles des revenus fonciers (régime réel) ou intégrés au forfait micro-foncier. Consultez votre comptable pour votre situation précise.',
+        a: 'Le forfait de mise en location est un frais de service, généralement déductible des revenus fonciers (régime réel) ou intégré au forfait micro-foncier. Consultez votre comptable pour votre situation précise.',
       },
       {
         q: 'Comment se fait le paiement ?',
-        a: 'Par carte bancaire via Stripe, prélèvement automatique mensuel. Vous recevez une facture chaque mois.',
+        a: 'Par carte via Stripe. Vous enregistrez votre carte au moment où vous validez un candidat (0 € prélevé à ce stade), puis le forfait est débité automatiquement, une seule fois, le jour de la signature du bail. Vous recevez un reçu.',
       },
     ],
   },

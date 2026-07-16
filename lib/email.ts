@@ -173,12 +173,12 @@ export async function sendWaitlistWelcomeEmail({
     : 'Bienvenue sur la liste d\'attente Instant Rent'
 
   const intro = isOwner
-    ? `Merci de rejoindre les <strong>propriétaires pionniers</strong> d'Instant Rent. Vous faites partie des premiers à qui nous ouvrirons l'accès, avec une offre dédiée : <strong>60 jours d'abonnement offerts</strong> à l'ouverture publique et un accompagnement personnalisé pour publier votre premier bien.`
+    ? `Merci de rejoindre les <strong>propriétaires pionniers</strong> d'Instant Rent. Vous faites partie des premiers à qui nous ouvrirons l'accès, avec une offre dédiée : votre <strong>1re mise en location offerte</strong> (forfait 0 €) et un accompagnement personnalisé pour publier votre premier bien.`
     : `Merci de rejoindre la <strong>liste d'attente locataire</strong> d'Instant Rent. Vous serez parmi les premiers à découvrir les biens disponibles et à pouvoir candidater dès l'ouverture, dossier déjà prêt.`
 
   const nextStepTitle = isOwner ? 'Que se passe-t-il maintenant ?' : 'Prochaines étapes'
   const nextStepBody = isOwner
-    ? `Nous vous recontactons personnellement dans les prochains jours pour préparer la publication de votre bien, valider votre cas d'usage (résidence non principale, mobilité, étudiant…) et débloquer vos 60 jours offerts.`
+    ? `Nous vous recontactons personnellement dans les prochains jours pour préparer la publication de votre bien, valider votre cas d'usage (résidence non principale, mobilité, étudiant…) et débloquer votre 1re mise en location offerte.`
     : `Nous vous contactons pour préparer votre dossier locataire (pièce d'identité, justificatif de revenus, etc.) afin que vous puissiez candidater en 1 clic dès le lancement.`
 
   await resend.emails.send({

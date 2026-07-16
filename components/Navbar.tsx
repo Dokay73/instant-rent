@@ -59,6 +59,9 @@ export default function Navbar() {
               Biens disponibles
             </Link>
           )}
+          <Link href="/tarifs" className="text-sm text-white/60 hover:text-white transition-colors hidden sm:block">
+            Tarifs
+          </Link>
 
           {user ? (
             <div className="relative" ref={dropdownRef}>

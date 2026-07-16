@@ -12,9 +12,9 @@ type Stats = {
   position: number
   total_signups: number
   referrals_count: number
-  promo_months: number
-  promo_max: number
-  promo_base: number
+  credit_euros: number
+  credit_max: number
+  credit_per_referral: number
   referrals_to_max: number
   maxed_out: boolean
 }
@@ -105,7 +105,7 @@ export default function WaitlistForm({ role }: { role: 'owner' | 'tenant' }) {
         </h1>
         <p className="text-base text-slate-500 max-w-xl mx-auto leading-relaxed">
           {isOwner
-            ? 'En vous inscrivant, vous bénéficiez de 2 mois d\'abonnement offerts à l\'ouverture publique et d\'un accompagnement personnalisé. Parrainez et passez jusqu\'à 12 mois gratuits.'
+            ? 'En vous inscrivant comme pionnier, votre 1re mise en location est offerte (forfait 0 €), puis 199 € à vie. Accompagnement personnalisé au lancement.'
             : 'En vous inscrivant, vous serez les premiers à accéder aux annonces et à pouvoir candidater dès le lancement.'}
         </p>
       </div>
@@ -114,7 +114,7 @@ export default function WaitlistForm({ role }: { role: 'owner' | 'tenant' }) {
         {(isOwner
           ? [
             { title: '0 € de frais', desc: 'tant que votre bien est vacant' },
-            { title: '2 → 12 mois offerts', desc: '+1 mois par filleul parrainé' },
+            { title: 'Jusqu\'à 500 € offerts', desc: '−50 € par filleul parrainé' },
             { title: 'Bail Code Civil', desc: 'flexibilité totale' },
           ]
           : [
@@ -208,7 +208,7 @@ function SuccessScreen({ stats, isOwner }: { stats: Stats | null; isOwner: boole
   const path = isOwner ? '/early-access/proprietaire' : '/early-access/locataire'
   const shareUrl = stats?.referral_code ? `${baseUrl}${path}?ref=${stats.referral_code}` : ''
   const shareText = isOwner
-    ? `Je viens de m'inscrire à Instant Rent, la plateforme tech pour les propriétaires bailleurs en bail Code Civil / mobilité à Paris. 60 jours offerts au lancement (+ 1 mois par filleul jusqu'à 1 an gratuit). Rejoins-moi :`
+    ? `Je viens de m'inscrire à Instant Rent, la plateforme tech pour les propriétaires bailleurs en bail Code Civil / mobilité à Paris. 1er placement offert au lancement (+ 50 € par filleul sur le forfait). Rejoins-moi :`
     : `Je viens de m'inscrire à Instant Rent, la plateforme de location flexible (1-24 mois) à Paris. Accès anticipé aux annonces. Rejoins-moi :`
 
   function copyLink() {
@@ -242,9 +242,9 @@ function SuccessScreen({ stats, isOwner }: { stats: Stats | null; isOwner: boole
                 <p className="text-xs text-slate-500 mt-0.5">sur {stats.total_signups} inscrits</p>
               </div>
               <div className="bg-[#0B1F4B] text-white rounded-xl p-4 text-center">
-                <p className="text-xs text-white/50 uppercase tracking-wide mb-1">Mois gratuits</p>
-                <p className="text-2xl font-bold tabular-nums">{stats.promo_months}</p>
-                <p className="text-xs text-white/60 mt-0.5">à l'ouverture</p>
+                <p className="text-xs text-white/50 uppercase tracking-wide mb-1">Réduction forfait</p>
+                <p className="text-2xl font-bold tabular-nums">{stats.credit_euros} €</p>
+                <p className="text-xs text-white/60 mt-0.5">sur votre mise en location</p>
               </div>
             </div>
 
@@ -254,13 +254,13 @@ function SuccessScreen({ stats, isOwner }: { stats: Stats | null; isOwner: boole
                 <span className="text-lg">🎁</span>
                 <p className="text-sm font-semibold text-[#0B1F4B]">
                   {stats.maxed_out
-                    ? 'Vous avez débloqué le maximum : 12 mois gratuits ! Continuez à inviter pour rester ambassadeur.'
-                    : `Parrainez ${stats.referrals_to_max} ${stats.referrals_to_max > 1 ? 'personnes' : 'personne'} pour passer à 12 mois gratuits (1 an).`}
+                    ? `Vous avez débloqué le maximum : ${stats.credit_max} € de réduction ! Continuez à inviter pour rester ambassadeur.`
+                    : `Parrainez ${stats.referrals_to_max} ${stats.referrals_to_max > 1 ? 'personnes' : 'personne'} pour atteindre ${stats.credit_max} € de réduction sur votre forfait.`}
                 </p>
               </div>
               {!stats.maxed_out && (
                 <p className="text-xs text-[#0B1F4B]/70 mb-3 leading-relaxed">
-                  Vous avez déjà <strong>{stats.referrals_count}</strong> filleul{stats.referrals_count > 1 ? 's' : ''}. Chaque inscription supplémentaire avec votre code = <strong>+1 mois offert</strong>.
+                  Vous avez déjà <strong>{stats.referrals_count}</strong> filleul{stats.referrals_count > 1 ? 's' : ''}. Chaque inscription supplémentaire avec votre code = <strong>+{stats.credit_per_referral} € offerts</strong>.
                 </p>
               )}
 

@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Instant Rent — Location flexible Bail Code Civil",
-  description: "Publiez votre bien et gérez vos locations en ligne. Bail Code Civil, 100% digital, 29€/mois uniquement quand votre bien est loué.",
+  description: "Publiez votre bien et gérez vos locations en ligne. Bail Code Civil, 100% digital. Un forfait unique payé seulement à la signature du bail — 0 % de commission sur vos loyers.",
 };
 
 export default function RootLayout({

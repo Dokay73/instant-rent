@@ -79,11 +79,10 @@ export default function SupprimerComptePage() {
       </div>
 
       <p className="text-xs text-slate-400 text-center">
-        Si vous avez un abonnement Stripe actif, contactez-nous à{' '}
+        Si un bail est en cours ou déjà signé, la suppression est bloquée. Pour toute question, contactez-nous à{' '}
         <a href="mailto:support@instant-rent.fr" className="text-[#4A6CF7] hover:underline">
           support@instant-rent.fr
-        </a>{' '}
-        pour en assurer la résiliation.
+        </a>.
       </p>
     </div>
   )

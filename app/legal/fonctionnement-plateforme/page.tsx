@@ -35,7 +35,7 @@ export default function FonctionnementPlateformePage() {
         Par défaut, les annonces sont classées par date de publication, de la plus récente à la plus ancienne. Lorsque le locataire applique des filtres de recherche (localisation, budget, durée, caractéristiques du logement), seules les annonces correspondant à ces critères sont affichées, toujours triées par date de publication.
       </p>
       <p className="text-sm leading-relaxed">
-        <strong>Aucun classement payant n'existe sur Instant Rent.</strong> L'abonnement souscrit par le propriétaire (29 € TTC/mois, facturé uniquement lorsque le bien est loué) rémunère le service de mise en location et n'influence en aucune manière l'ordre d'affichage, le référencement ou la mise en avant des annonces. Aucun lien contractuel ou rémunération ne modifie le classement.
+        <strong>Aucun classement payant n'existe sur Instant Rent.</strong> Le forfait réglé par le propriétaire (forfait unique de 290 à 490 € selon le loyer, facturé uniquement à la signature du bail) rémunère le service de mise en location et n'influence en aucune manière l'ordre d'affichage, le référencement ou la mise en avant des annonces. Aucun lien contractuel ou rémunération ne modifie le classement.
       </p>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">4. Obligations des parties</h2>
