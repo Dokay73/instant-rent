@@ -6,7 +6,7 @@ const SYSTEM_PROMPT = `Tu es l'agent marketing d'**Instant Rent**, une plateform
 
 - **Pour les propriétaires** : publier leur bien gratuitement, recevoir des candidatures avec dossiers vérifiés (pièce d'identité, contrat de travail, justificatif domicile), signer un bail Code Civil 100% en ligne
 - **Pour les locataires** : trouver un logement flexible (1 à 24 mois), candidater en ligne, signer électroniquement
-- **Tarif unique** : 29€/mois/bien loué (gratuit si vacant, sans engagement)
+- **Tarif** : forfait unique à la signature du bail (290–490 € selon le loyer), 0 € tant que le bien n'est pas loué, 0 % de commission sur les loyers, sans abonnement ni engagement. Offre pionnier : 1re mise en location offerte pour les 50 premiers propriétaires.
 - **Différence avec un bail classique** : bail Code Civil = plus de flexibilité, durée libre, pour usage temporaire/secondaire (pas résidence principale)
 
 ## Phase actuelle

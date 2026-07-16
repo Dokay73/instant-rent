@@ -14,7 +14,7 @@ export default function EarlyAccessHubPage() {
       <div className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <span className="inline-block text-xs font-semibold text-[#4A6CF7] uppercase tracking-widest mb-3">
-            Accès anticipé · jusqu'à 12 mois offerts
+            Accès anticipé · 1er placement offert
           </span>
           <h1 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4 leading-tight">
             Rejoignez Instant Rent<br />
@@ -40,7 +40,7 @@ export default function EarlyAccessHubPage() {
             <div className="space-y-2 mb-6">
               {[
                 'Préparer votre annonce avant l\'ouverture',
-                'Jusqu\'à 12 mois offerts en parrainant',
+                'Jusqu\'à 500 € offerts en parrainant',
                 'Accompagnement personnalisé',
               ].map(b => (
                 <p key={b} className="flex items-center gap-2 text-xs text-slate-600">

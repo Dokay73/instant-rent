@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { computePromoMonths, MAX_PROMO_MONTHS, BASE_PROMO_MONTHS } from '@/lib/referral'
+import { computeReferralCredit, referralsToMaxCredit, MAX_REFERRAL_CREDIT, REFERRAL_CREDIT_PER_SIGNUP } from '@/lib/referral'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,9 +46,9 @@ export async function GET(req: NextRequest) {
     .eq('referred_by', codeUpper)
 
   const referrals = referralsCount ?? 0
-  const promoMonths = computePromoMonths(referrals)
-  const maxedOut = promoMonths >= MAX_PROMO_MONTHS
-  const referralsToMax = maxedOut ? 0 : (MAX_PROMO_MONTHS - BASE_PROMO_MONTHS) - referrals
+  const creditEuros = computeReferralCredit(referrals)
+  const referralsToMax = referralsToMaxCredit(referrals)
+  const maxedOut = referralsToMax === 0
 
   return NextResponse.json({
     full_name: me.full_name,
@@ -57,9 +57,9 @@ export async function GET(req: NextRequest) {
     position: positionCount ?? 0,
     total_signups: totalCount ?? 0,
     referrals_count: referrals,
-    promo_months: promoMonths,
-    promo_max: MAX_PROMO_MONTHS,
-    promo_base: BASE_PROMO_MONTHS,
+    credit_euros: creditEuros,
+    credit_max: MAX_REFERRAL_CREDIT,
+    credit_per_referral: REFERRAL_CREDIT_PER_SIGNUP,
     referrals_to_max: referralsToMax,
     maxed_out: maxedOut,
   })

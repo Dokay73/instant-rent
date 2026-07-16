@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
       const propertyId = session.metadata?.propertyId
       const landlordId = session.metadata?.landlordId ?? null
       const feeAmountCents = parseInt(session.metadata?.feeAmountCents ?? '', 10)
+      const feeDiscountCents = parseInt(session.metadata?.feeDiscountCents ?? '0', 10) || 0
       const feeTier = session.metadata?.feeTier ?? null
       const customerId = (session.customer as string | null) ?? null
       const setupIntentId = session.setup_intent as string | null
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
         stripe_payment_method_id: paymentMethodId,
         stripe_setup_session_id: session.id,
         fee_amount_cents: feeAmountCents,
+        fee_discount_cents: feeDiscountCents,
         fee_tier: feeTier,
         payment_status: paymentStatus,
       })

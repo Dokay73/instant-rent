@@ -34,7 +34,12 @@ export const FEE_BASIS: 'hc' | 'cc' = 'hc'
 export type FeeTier = '290' | '390' | '490' | 'pioneer_first' | 'pioneer_next'
 
 export interface ServiceFee {
+  /** Montant NET réellement prélevé (après réduction parrainage). */
   amountCents: number
+  /** Forfait BRUT avant réduction (palier ou pionnier). Pour l'audit/affichage. */
+  grossAmountCents: number
+  /** Réduction parrainage effectivement appliquée sur ce forfait. */
+  discountCents: number
   tier: FeeTier
   /** Libellé humain (emails, dashboard, metadata Stripe). */
   label: string
@@ -59,25 +64,41 @@ export interface ComputeFeeInput {
   isPioneer: boolean
   /** Nombre de placements DÉJÀ facturés par ce proprio (pour « 1er offert »). */
   priorPlacementCount: number
+  /** Crédit parrainage DISPONIBLE (gagné − déjà consommé), en centimes. */
+  availableCreditCents?: number
+}
+
+/** Palier/pionnier BRUT, avant toute réduction parrainage. */
+function grossFee(input: ComputeFeeInput): { grossAmountCents: number; tier: FeeTier } {
+  const { rentHc, charges = 0, isPioneer, priorPlacementCount } = input
+  if (isPioneer) {
+    if (priorPlacementCount <= 0) return { grossAmountCents: PIONEER_FIRST_CENTS, tier: 'pioneer_first' }
+    return { grossAmountCents: PIONEER_NEXT_CENTS, tier: 'pioneer_next' }
+  }
+  const rentEuros = FEE_BASIS === 'cc' ? rentHc + charges : rentHc
+  const { amountCents, tier } = standardTier(rentEuros)
+  return { grossAmountCents: amountCents, tier }
 }
 
 /**
  * Calcule le forfait dû pour un placement donné. Appelé à la validation du
  * candidat, le résultat est FIGÉ (snapshot) dans la ligne de placement.
+ * Applique la réduction parrainage disponible, plafonnée au montant du forfait.
  */
 export function computeServiceFee(input: ComputeFeeInput): ServiceFee {
-  const { rentHc, charges = 0, isPioneer, priorPlacementCount } = input
+  const { grossAmountCents, tier } = grossFee(input)
+  const available = Math.max(input.availableCreditCents ?? 0, 0)
+  const discountCents = Math.min(available, grossAmountCents)
+  const amountCents = grossAmountCents - discountCents
 
-  if (isPioneer) {
-    if (priorPlacementCount <= 0) {
-      return { amountCents: PIONEER_FIRST_CENTS, tier: 'pioneer_first', label: '1er placement offert (pionnier)' }
-    }
-    return { amountCents: PIONEER_NEXT_CENTS, tier: 'pioneer_next', label: 'Forfait pionnier (199 €)' }
-  }
+  const labelBase = tier === 'pioneer_first'
+    ? '1er placement offert (pionnier)'
+    : tier === 'pioneer_next'
+      ? 'Forfait pionnier (199 €)'
+      : `Forfait placement (${grossAmountCents / 100} €)`
+  const label = discountCents > 0 ? `${labelBase} − ${discountCents / 100} € parrainage` : labelBase
 
-  const rentEuros = FEE_BASIS === 'cc' ? rentHc + charges : rentHc
-  const { amountCents, tier } = standardTier(rentEuros)
-  return { amountCents, tier, label: `Forfait placement (${amountCents / 100} €)` }
+  return { amountCents, grossAmountCents, discountCents, tier, label }
 }
 
 /** Formatage FR d'un montant en centimes → « 290 € » / « 0 € ». */

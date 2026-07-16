@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { computeServiceFee } from '@/lib/pricing'
+import { computeReferralCredit } from '@/lib/referral'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -62,12 +63,37 @@ export async function POST(req: NextRequest) {
     .select('*', { count: 'exact', head: true })
     .eq('landlord_id', user.id)
 
+  // Crédit parrainage DISPONIBLE = gagné (50 €/filleul, plafond 500 €, dérivé de
+  // façon autoritaire depuis la waitlist) − déjà consommé sur les placements passés.
+  let availableCreditCents = 0
+  if (user.email) {
+    const { data: wl } = await supabaseAdmin
+      .from('waitlist')
+      .select('referral_code')
+      .eq('email', user.email.toLowerCase())
+      .maybeSingle()
+    if (wl?.referral_code) {
+      const { count: referralCount } = await supabaseAdmin
+        .from('waitlist')
+        .select('id', { count: 'exact', head: true })
+        .eq('referred_by', wl.referral_code)
+      const earnedCents = computeReferralCredit(referralCount ?? 0) * 100
+      const { data: usedRows } = await supabaseAdmin
+        .from('subscriptions')
+        .select('fee_discount_cents')
+        .eq('landlord_id', user.id)
+      const consumedCents = (usedRows ?? []).reduce((s, r) => s + (r.fee_discount_cents ?? 0), 0)
+      availableCreditCents = Math.max(0, earnedCents - consumedCents)
+    }
+  }
+
   // Forfait FIGÉ à la validation (le proprio paiera exactement ce prix à la signature).
   const fee = computeServiceFee({
     rentHc: property.rent_hc ?? 0,
     charges: property.charges ?? 0,
     isPioneer: !!pioneer,
     priorPlacementCount: priorPlacementCount ?? 0,
+    availableCreditCents,
   })
 
   // Un seul Stripe Customer par proprio (regroupe carte + paiements). On le
@@ -106,6 +132,8 @@ export async function POST(req: NextRequest) {
       propertyId,
       landlordId: user.id,
       feeAmountCents: String(fee.amountCents),
+      feeGrossCents: String(fee.grossAmountCents),
+      feeDiscountCents: String(fee.discountCents),
       feeTier: fee.tier,
     },
     setup_intent_data: {
