@@ -23,8 +23,6 @@ export async function POST(req: NextRequest) {
 
   // ── Idempotence ── Stripe redélivre ses events (au moins une fois, parfois plus).
   // On enregistre event.id ; s'il existe déjà (conflit PK 23505), on acquitte sans rejouer.
-  // (Si la table n'existe pas encore, l'erreur n'est pas 23505 → on traite quand même :
-  //  les contraintes d'unicité + upserts empêchent de toute façon les doublons.)
   const { error: dupErr } = await supabaseAdmin
     .from('stripe_events')
     .insert({ event_id: event.id, type: event.type })
@@ -33,49 +31,73 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // ── Enregistrement de la carte (Checkout mode:setup) → matérialise le placement ──
+    // MODÈLE SUCCESS FEE : ici on ne prélève RIEN. On enregistre la carte du proprio
+    // et on fige le forfait. Le prélèvement a lieu à la signature (docuseal-webhook).
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
+      // On ne traite QUE les sessions setup de notre flux (avec metadata).
+      if (session.mode !== 'setup') {
+        return NextResponse.json({ received: true, ignored: 'mode non-setup' })
+      }
       const applicationId = session.metadata?.applicationId
       const propertyId = session.metadata?.propertyId
-      const stripeSubId = session.subscription as string | null
-      // Event Stripe étranger à notre flux (sans metadata) → on acquitte proprement.
-      if (!applicationId || !propertyId || !stripeSubId) {
+      const landlordId = session.metadata?.landlordId ?? null
+      const feeAmountCents = parseInt(session.metadata?.feeAmountCents ?? '', 10)
+      const feeTier = session.metadata?.feeTier ?? null
+      const customerId = (session.customer as string | null) ?? null
+      const setupIntentId = session.setup_intent as string | null
+      if (!applicationId || !propertyId || !setupIntentId || Number.isNaN(feeAmountCents)) {
         return NextResponse.json({ received: true, ignored: 'metadata absente' })
       }
 
-      // 1) L'ABONNEMENT D'ABORD. Son insert est protégé par 2 contraintes uniques
-      //    (stripe_sub_id unique + 1 abo actif/bien). C'est LUI qui départage AVANT de
-      //    muter la candidature/le bien.
+      // Récupère la carte enregistrée (payment_method) depuis le SetupIntent.
+      const si = await stripe.setupIntents.retrieve(setupIntentId)
+      const paymentMethodId = (si.payment_method as string | null) ?? null
+      const paymentStatus = feeAmountCents <= 0 ? 'waived' : 'pending'
+
+      // 1) LE PLACEMENT D'ABORD. Son insert est protégé par 2 index uniques :
+      //    (a) un seul actif/bien → départage atomique de 2 candidats concurrents,
+      //    (b) stripe_setup_session_id unique → idempotence du rejeu d'event.
+      //    C'est LUI qui départage AVANT de muter la candidature / le bien.
       const { error: subErr } = await supabaseAdmin.from('subscriptions').insert({
         property_id: propertyId,
-        stripe_sub_id: stripeSubId,
+        application_id: applicationId,
+        landlord_id: landlordId,
         is_active: true,
         started_at: new Date().toISOString(),
+        stripe_customer_id: customerId,
+        stripe_payment_method_id: paymentMethodId,
+        stripe_setup_session_id: session.id,
+        fee_amount_cents: feeAmountCents,
+        fee_tier: feeTier,
+        payment_status: paymentStatus,
       })
       if (subErr) {
         if (subErr.code !== '23505') throw subErr
-        // Conflit d'unicité (23505), peu importe laquelle des 2 contraintes. On ne matérialise
-        // QUE si NOTRE abonnement (ce stripe_sub_id) est réellement ACTIF en base. Sinon :
-        //   - soit un AUTRE abo a pris le bien (double checkout perdu),
-        //   - soit notre abo a été désactivé entre-temps (retry après annulation).
-        // Dans les deux cas : ne pas valider, annuler notre abo côté Stripe, rejeter la candidature.
+        // Conflit d'unicité. On distingue les 2 cas via NOTRE session :
         const { data: mine, error: mineErr } = await supabaseAdmin.from('subscriptions')
-          .select('is_active').eq('stripe_sub_id', stripeSubId).maybeSingle()
-        // Fail-hard : ce read gouverne une action DESTRUCTIVE (annuler l'abo + rejeter).
-        // Sur erreur DB, throw → le catch efface event.id → Stripe retente (ne JAMAIS
-        // annuler l'abo du gagnant à cause d'un blip de lecture).
+          .select('is_active').eq('stripe_setup_session_id', session.id).maybeSingle()
+        // Fail-hard : ce read gouverne la décision de matérialiser ou rejeter.
         if (mineErr) throw mineErr
-        if (!mine?.is_active) {
-          try { await stripe.subscriptions.cancel(stripeSubId) } catch (e) { console.error('Annulation abo perdant:', e) }
+        if (!mine) {
+          // Notre ligne n'existe pas → le conflit vient de l'index "un actif/bien" :
+          // un AUTRE placement a pris le bien. On a perdu la course → rejeter notre
+          // candidature. (Rien à annuler côté Stripe : la carte n'est jamais prélevée.)
           await supabaseAdmin.from('applications').update({ status: 'rejected' })
             .eq('id', applicationId).eq('status', 'pending')
           return NextResponse.json({ received: true, not_winner: true })
         }
-        // mine.is_active === true → rejeu du même event : on continue idempotent.
+        if (!mine.is_active) {
+          // Notre placement existe mais n'est plus actif (bail déjà terminé) → rejeu
+          // tardif d'un vieil event : acquitter SANS re-matérialiser (ne pas ré-occuper).
+          return NextResponse.json({ received: true, stale_replay: true })
+        }
+        // mine.is_active === true → rejeu de NOTRE propre event : on continue idempotent.
       }
 
-      // 2) L'abonnement gagnant est en place → matérialiser l'état. Fail-hard sur erreur DB :
-      //    le catch efface event.id pour que Stripe RETENTE (garde sub<->app<->bien cohérent).
+      // 2) Le placement gagnant est en place → matérialiser l'état. Fail-hard sur erreur DB :
+      //    le catch efface event.id pour que Stripe RETENTE (garde placement<->app<->bien cohérent).
       const r1 = await supabaseAdmin.from('applications').update({ status: 'validated' }).eq('id', applicationId)
       if (r1.error) throw r1.error
       const r2 = await supabaseAdmin.from('applications').update({ status: 'rejected' })
@@ -89,7 +111,8 @@ export async function POST(req: NextRequest) {
       if (r4.error) throw r4.error
     }
 
-    // ── Fin de vie de l'abonnement (résiliation, impayé définitif) → resynchroniser l'état ──
+    // ── Fin de vie du placement (résiliation) → resynchroniser l'état ──
+    // (Legacy : ne concerne que d'éventuels anciens abonnements Stripe.)
     if (event.type === 'customer.subscription.deleted') {
       const sub = event.data.object as Stripe.Subscription
       const { data: subRow } = await supabaseAdmin.from('subscriptions')

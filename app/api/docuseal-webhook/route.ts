@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 import crypto from 'crypto'
 
 export const maxDuration = 60
@@ -10,6 +11,73 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+// Prélève le forfait « success fee » à la signature, sur la carte enregistrée à
+// la validation (Checkout mode:setup). ISOLÉ & sans throw : un échec de
+// prélèvement ne doit JAMAIS faire échouer l'enregistrement de la signature —
+// le bail est déjà juridiquement valide. On enregistre le statut ; une relance
+// du proprio (SCA/carte refusée) se fait séparément.
+async function chargeServiceFee(applicationId: string): Promise<void> {
+  const { data: placement } = await supabaseAdmin
+    .from('subscriptions')
+    .select('id, stripe_customer_id, stripe_payment_method_id, fee_amount_cents, payment_status, property_id')
+    .eq('application_id', applicationId)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (!placement) {
+    console.warn(`Aucun placement actif pour ${applicationId} — pas de prélèvement`)
+    return
+  }
+  // Idempotence : déjà réglé / en cours / offert → rien à faire.
+  if (['paid', 'processing', 'waived'].includes(placement.payment_status)) return
+
+  // Pionnier 1er placement (0 €) → rien à prélever, on marque "waived".
+  if (!placement.fee_amount_cents || placement.fee_amount_cents <= 0) {
+    await supabaseAdmin.from('subscriptions')
+      .update({ payment_status: 'waived', paid_at: new Date().toISOString() })
+      .eq('id', placement.id)
+    return
+  }
+
+  if (!placement.stripe_customer_id || !placement.stripe_payment_method_id) {
+    await supabaseAdmin.from('subscriptions').update({ payment_status: 'failed' }).eq('id', placement.id)
+    console.error(`Placement ${applicationId} sans carte enregistrée — prélèvement impossible`)
+    return
+  }
+
+  try {
+    const pi = await stripe.paymentIntents.create({
+      amount: placement.fee_amount_cents,
+      currency: 'eur',
+      customer: placement.stripe_customer_id,
+      payment_method: placement.stripe_payment_method_id,
+      off_session: true,
+      confirm: true,
+      metadata: { applicationId, kind: 'success_fee', propertyId: placement.property_id ?? '' },
+    }, { idempotencyKey: `success_fee_${applicationId}` })
+
+    const paid = pi.status === 'succeeded'
+    await supabaseAdmin.from('subscriptions').update({
+      stripe_payment_intent_id: pi.id,
+      payment_status: paid ? 'paid' : 'processing',
+      ...(paid ? { paid_at: new Date().toISOString() } : {}),
+    }).eq('id', placement.id)
+  } catch (err: unknown) {
+    // Carte refusée / auth requise (authentication_required, off-session) → statut de relance.
+    const e = err as { code?: string; payment_intent?: { id?: string }; raw?: { payment_intent?: { id?: string } } }
+    const code = e?.code
+    const piId = e?.payment_intent?.id ?? e?.raw?.payment_intent?.id
+    const status = code === 'authentication_required' ? 'action_required' : 'failed'
+    await supabaseAdmin.from('subscriptions').update({
+      payment_status: status,
+      ...(piId ? { stripe_payment_intent_id: piId } : {}),
+    }).eq('id', placement.id)
+    console.error(`Prélèvement forfait "${status}" pour ${applicationId}:`, code ?? err)
+  }
+}
 
 const DOCUMENSO_API_URL = process.env.DOCUMENSO_API_URL
 const DOCUMENSO_API_KEY = process.env.DOCUMENSO_API_KEY
@@ -106,6 +174,14 @@ export async function POST(req: NextRequest) {
           pdf_url: signedPdfPath,
         })
         .eq('application_id', contract.application_id)
+
+      // Prélèvement du forfait à la signature (off-session, carte enregistrée à
+      // la validation). Isolé : un échec ne fait JAMAIS échouer la signature.
+      try {
+        await chargeServiceFee(contract.application_id)
+      } catch (e) {
+        console.error(`Prélèvement forfait échoué pour ${contract.application_id} (signature bien enregistrée):`, e)
+      }
     }
 
     if (event === 'DOCUMENT_REJECTED' || event === 'RECIPIENT_EXPIRED') {
