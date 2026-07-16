@@ -36,7 +36,7 @@ export default async function WaitlistCount({ variant = 'hero' }: { variant?: Va
     return (
       <div className="inline-flex items-center gap-2.5 border border-white/10 bg-white/5 text-white/75 text-xs font-medium px-4 py-2 rounded-full">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-        Pré-lancement actif · 60 jours offerts pour les premiers inscrits
+        Pré-lancement actif · 1er placement offert pour les premiers inscrits
       </div>
     )
   }

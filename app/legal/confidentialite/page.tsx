@@ -28,7 +28,7 @@ export default function ConfidentialitePage() {
         <li>Création et gestion de votre compte utilisateur</li>
         <li>Mise en relation entre propriétaires et locataires</li>
         <li>Génération des contrats de bail</li>
-        <li>Facturation et gestion des abonnements</li>
+        <li>Facturation du forfait de mise en location</li>
         <li>Sécurisation de la plateforme et prévention de la fraude</li>
         <li>Communication relative au service (notifications, emails transactionnels)</li>
       </ul>

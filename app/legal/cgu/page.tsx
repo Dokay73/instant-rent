@@ -2,7 +2,7 @@ export default function CGUPage() {
   return (
     <>
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Conditions Générales d'Utilisation</h1>
-      <p className="text-sm text-slate-400 mb-8">Dernière mise à jour : avril 2026</p>
+      <p className="text-sm text-slate-400 mb-8">Dernière mise à jour : juillet 2026</p>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">1. Objet</h2>
       <p className="text-sm leading-relaxed">
@@ -20,7 +20,7 @@ export default function CGUPage() {
         <li>Publication d'annonces de location par les propriétaires</li>
         <li>Recherche et candidature sur les annonces par les locataires</li>
         <li>Génération automatique de baux conformes au Code civil</li>
-        <li>Gestion des abonnements de mise en location (29 €/mois/bien loué)</li>
+        <li>Prestation de services techniques (édition de l'annonce, génération du bail, signature électronique), facturée au propriétaire à la signature du bail</li>
       </ul>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">4. Obligations du propriétaire</h2>
@@ -35,12 +35,12 @@ export default function CGUPage() {
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">6. Tarification</h2>
       <p className="text-sm leading-relaxed">
-        La mise en ligne d'un bien est gratuite. Un abonnement de 29 € TTC/mois est facturé au propriétaire uniquement lorsque le bien est effectivement loué via la plateforme. L'abonnement est automatiquement résilié lors de la fin du bail. Aucun engagement de durée n'est imposé.
+        La mise en ligne d'un bien est gratuite. Instant Rent facture au propriétaire des frais de service rémunérant une prestation de services techniques (diffusion de l'annonce, présentation de candidats vérifiés, génération d'un bail conforme et signature électronique). Ces frais prennent la forme d'un forfait unique, déterminé selon le montant du loyer (290 € pour un loyer inférieur à 1 200 €, 390 € entre 1 200 € et 2 200 €, 490 € au-delà), exigible à l'émission du bail finalisé et signé via la plateforme. Aucun frais n'est dû tant qu'aucun bail n'est signé. Aucun engagement de durée n'est imposé, aucune commission n'est prélevée sur les loyers, et le service est entièrement gratuit pour le locataire.
       </p>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">7. Rôle d'Instant Rent</h2>
       <p className="text-sm leading-relaxed">
-        Instant Rent est un intermédiaire technique. La plateforme ne collecte pas les loyers ni le dépôt de garantie, qui sont versés directement entre le locataire et le propriétaire. Instant Rent n'est ni agent immobilier, ni mandataire de gestion locative.
+        Instant Rent est un intermédiaire et prestataire technique. La plateforme n'agit pas en qualité de mandataire, ne procède à aucune négociation et ne fixe pas le loyer, lequel est déterminé librement par le propriétaire. Elle ne collecte pas les loyers ni le dépôt de garantie, qui sont versés directement entre le locataire et le propriétaire, lesquels contractent directement entre eux. Instant Rent n'est ni agent immobilier, ni mandataire de gestion locative.
       </p>
 
       <h2 className="text-base font-semibold text-slate-900 mt-8 mb-3">8. Responsabilité</h2>

@@ -194,7 +194,7 @@ export default function ParisScrollHero({ ownerCta, tenantCta }: { ownerCta: str
         <div className={`absolute inset-x-0 bottom-9 z-20 transition-opacity duration-500 ${beat === 3 ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5">
             <Link href={ownerCta} className="rounded-xl bg-brand-blue px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-brand-blue-deep">
-              Réserver mes 60 jours offerts →
+              Réserver mon 1er placement offert →
             </Link>
             <Link href={tenantCta} className="px-2 text-sm text-white/50 transition-colors hover:text-white/80">
               Je cherche un logement

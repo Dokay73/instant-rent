@@ -5,7 +5,6 @@ import Navbar from '@/components/Navbar'
 import PreLaunchBanner from '@/components/PreLaunchBanner'
 import Link from 'next/link'
 import ScrollReveal from '@/components/ui/ScrollReveal'
-import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import Reveal, { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { isPreLaunch } from '@/lib/launch'
 import ParisScrollHero from '@/components/home/ParisScrollHero'
@@ -17,7 +16,7 @@ const LANDLORD_BENEFITS = [
   },
   {
     title: 'Payez uniquement quand c\'est loué',
-    desc: 'Abonnement activé uniquement lorsque votre bien est occupé. Zéro frais si vacant.',
+    desc: 'Un forfait unique, le jour où le bail est signé. 0 € tant que votre bien n\'est pas loué, 0 % de commission sur vos loyers.',
   },
   {
     title: 'Dossiers vérifiés avant vous',
@@ -163,7 +162,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 bg-brand-navy text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:bg-[#142d6b] transition-colors"
             >
               {preLaunch
-                ? activeTab === 'landlord' ? 'Réserver mes 60 jours offerts' : 'Préparer mon dossier locataire'
+                ? activeTab === 'landlord' ? 'Réserver mon 1er placement offert' : 'Préparer mon dossier locataire'
                 : activeTab === 'landlord' ? 'Publier mon premier bien' : 'Trouver un logement'}
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -185,24 +184,21 @@ export default function HomePage() {
           <div className="bg-brand-navy text-white rounded-2xl p-10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(74,108,247,0.15) 0%, transparent 65%)' }} />
 
-            <p className="text-xs text-white/40 uppercase tracking-widest mb-2 relative z-10">Par bien loué</p>
+            <p className="text-xs text-white/40 uppercase tracking-widest mb-2 relative z-10">Tant que le bien n&apos;est pas loué</p>
             <div className="flex items-baseline gap-1 relative z-10">
-              <span className="text-7xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                <AnimatedCounter value={29} duration={1.2} />
-              </span>
+              <span className="text-7xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>0</span>
               <span className="text-3xl font-bold">€</span>
-              <span className="text-white/40 ml-1 text-lg">/mois</span>
             </div>
             <p className="mt-3 text-white/50 text-sm relative z-10">
-              Uniquement quand votre bien est occupé. Gratuit si vacant.
+              Puis un <span className="text-white font-medium">forfait unique de 290 à 490 €</span> selon le loyer — payé une seule fois, le jour où le bail est signé. 0 % de commission sur vos loyers.
             </p>
 
             <div className="mt-8 pt-8 border-t border-white/10 grid grid-cols-2 gap-3 text-sm relative z-10">
               {[
-                'Gestion complète du bail',
+                '0 % sur vos loyers',
                 'Dossiers vérifiés inclus',
-                '0 € si bien vacant',
-                'Sans engagement',
+                'Payé seulement si c\'est loué',
+                'Sans abonnement ni engagement',
               ].map(f => (
                 <div key={f} className="flex items-center gap-2 text-white/65">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brand-blue flex-shrink-0" aria-hidden>
@@ -213,11 +209,15 @@ export default function HomePage() {
               ))}
             </div>
 
+            <Link href="/tarifs" className="mt-6 block text-center text-sm text-white/55 hover:text-white transition-colors relative z-10 underline underline-offset-4 decoration-white/25">
+              Voir le détail des tarifs
+            </Link>
+
             <Link
               href={ownerCta}
-              className="mt-8 block text-center bg-brand-blue text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors relative z-10"
+              className="mt-4 block text-center bg-brand-blue text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-brand-blue-deep transition-colors relative z-10"
             >
-              {preLaunch ? 'Réserver mes 60 jours offerts' : 'Commencer gratuitement'}
+              {preLaunch ? 'Réserver mon 1er placement offert' : 'Commencer gratuitement'}
             </Link>
           </div>
           </Reveal>

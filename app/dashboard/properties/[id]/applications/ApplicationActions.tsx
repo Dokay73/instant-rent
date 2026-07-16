@@ -54,7 +54,7 @@ export default function ApplicationActions({
         disabled={loading !== null}
         className="text-sm bg-green-600 text-white px-4 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
       >
-        {loading === 'validate' ? 'Redirection...' : 'Valider & Souscrire'}
+        {loading === 'validate' ? 'Redirection...' : 'Valider ce candidat'}
       </button>
       <button
         onClick={handleReject}

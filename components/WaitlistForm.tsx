@@ -105,7 +105,7 @@ export default function WaitlistForm({ role }: { role: 'owner' | 'tenant' }) {
         </h1>
         <p className="text-base text-slate-500 max-w-xl mx-auto leading-relaxed">
           {isOwner
-            ? 'En vous inscrivant, vous bénéficiez de 2 mois d\'abonnement offerts à l\'ouverture publique et d\'un accompagnement personnalisé. Parrainez et passez jusqu\'à 12 mois gratuits.'
+            ? 'En vous inscrivant comme pionnier, votre 1re mise en location est offerte (forfait 0 €), puis 199 € à vie. Accompagnement personnalisé au lancement.'
             : 'En vous inscrivant, vous serez les premiers à accéder aux annonces et à pouvoir candidater dès le lancement.'}
         </p>
       </div>

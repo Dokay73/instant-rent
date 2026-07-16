@@ -305,7 +305,7 @@ export default function NewPropertyPage() {
   )
 
   const totalRent = (parseFloat(rentHc) || 0) + (parseFloat(charges) || 0)
-  const netRent = totalRent - 29
+  const netRent = totalRent // 0 % commission : le proprio perçoit 100 % du loyer
   const rentHcNum = parseFloat(rentHc) || 0
   const depositCap = 2 * rentHcNum
   const depositTooHigh = rentHcNum > 0 && (parseFloat(deposit) || 0) > depositCap
@@ -557,7 +557,7 @@ export default function NewPropertyPage() {
                           <span className="font-bold text-slate-900 text-lg" style={{ fontVariantNumeric: 'tabular-nums' }}>{totalRent} €/mois</span>
                         </div>
                         <div className="bg-[#0B1F4B]/5 border border-[#0B1F4B]/10 rounded-xl p-4">
-                          <span className="text-xs text-slate-500 block mb-0.5">Vous percevrez (net frais)</span>
+                          <span className="text-xs text-slate-500 block mb-0.5">Vous percevrez · 0 % commission</span>
                           <span className="font-bold text-[#0B1F4B] text-lg" style={{ fontVariantNumeric: 'tabular-nums' }}>{netRent} €/mois</span>
                         </div>
                       </div>
@@ -884,7 +884,7 @@ export default function NewPropertyPage() {
                         { label: 'Adresse', value: `${address}, ${city}` },
                         { label: 'Superficie', value: `${surface} m²` },
                         { label: 'Loyer CC', value: `${totalRent} €/mois` },
-                        { label: 'Vous percevrez', value: `${netRent} €/mois (net frais Instant Rent)` },
+                        { label: 'Vous percevrez', value: `${netRent} €/mois · 100 %, 0 % de commission` },
                         { label: 'Dépôt de garantie', value: deposit ? `${deposit} €` : 'Non renseigné' },
                         { label: 'Durées', value: durations.map(d => `${d} mois`).join(', ') || 'Non renseigné' },
                         { label: 'DPE', value: dpeClass || 'Non renseigné' },
@@ -950,7 +950,7 @@ export default function NewPropertyPage() {
                       <input type="checkbox" checked={cguAccepted} onChange={e => setCguAccepted(e.target.checked)}
                         className="mt-0.5 accent-[#0B1F4B] w-4 h-4 flex-shrink-0" />
                       <span className="text-xs text-slate-600 leading-relaxed">
-                        J'accepte les <Link href="/legal/cgu" target="_blank" className="text-[#4A6CF7] hover:underline">conditions générales d'utilisation</Link> d'Instant Rent. Je confirme être en droit de mettre ce logement en location. Je reconnais que les frais de 29 €/mois sont déductibles fiscalement comme frais de gestion.
+                        J'accepte les <Link href="/legal/cgu" target="_blank" className="text-[#4A6CF7] hover:underline">conditions générales d'utilisation</Link> d'Instant Rent. Je confirme être en droit de mettre ce logement en location. Je reconnais que le forfait de mise en location (290 à 490 € selon le loyer) est dû à la signature du bail et constitue des frais de service déductibles fiscalement comme frais de gestion.
                       </span>
                     </label>
                   </div>
