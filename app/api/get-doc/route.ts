@@ -18,6 +18,9 @@ export async function GET(req: NextRequest) {
     const applicationId = searchParams.get('applicationId')
 
     if (!path) return NextResponse.json({ error: 'Path manquant' }, { status: 400 })
+    // Un path contenant '..' pourrait tenter de s'échapper du préfixe `${user.id}/`
+    // autorisé au cas 1. On refuse d'emblée (défense en profondeur).
+    if (path.includes('..')) return NextResponse.json({ error: 'Path invalide' }, { status: 400 })
 
     let allowed = false
 
@@ -26,19 +29,28 @@ export async function GET(req: NextRequest) {
       allowed = true
     }
 
-    // Cas 2 : le path concerne une candidature (docs locataire ou bail)
+    // Cas 2 : le path concerne une candidature (docs locataire ou bail).
+    // Être partie prenante NE SUFFIT PAS : il faut AUSSI que le path demandé
+    // appartienne réellement à CETTE candidature. Sans ce 2e verrou, il suffisait
+    // d'être partie à UNE candidature (donc de candidater une fois) pour faire
+    // signer une URL vers N'IMPORTE quel fichier du bucket — pièce d'identité
+    // d'un tiers, bail signé d'un autre dossier… (IDOR).
     if (!allowed && applicationId) {
       const { data: app } = await supabaseAdmin
         .from('applications')
-        .select('tenant_id, properties(owner_id)')
+        .select('tenant_id, docs_urls, properties(owner_id)')
         .eq('id', applicationId)
         .single()
 
       if (app) {
         const property = Array.isArray(app.properties) ? app.properties[0] : app.properties
-        if (app.tenant_id === user.id || property?.owner_id === user.id) {
-          allowed = true
-        }
+        const isParty = app.tenant_id === user.id || property?.owner_id === user.id
+        // Périmètre légitime de cette candidature :
+        //  • les pièces déclarées dans docs_urls (identité, contrat, domicile)
+        //  • tout ce qui vit sous contracts/<applicationId>/ (bail, bail signé, attestation)
+        const docPaths = Object.values((app.docs_urls ?? {}) as Record<string, string>)
+        const belongsToApp = docPaths.includes(path) || path.startsWith(`contracts/${applicationId}/`)
+        if (isParty && belongsToApp) allowed = true
       }
     }
 
