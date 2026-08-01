@@ -38,18 +38,22 @@ export async function GET(req: NextRequest) {
     if (!allowed && applicationId) {
       const { data: app } = await supabaseAdmin
         .from('applications')
-        .select('tenant_id, docs_urls, properties(owner_id)')
+        .select('tenant_id, properties(owner_id)')
         .eq('id', applicationId)
         .single()
 
       if (app) {
         const property = Array.isArray(app.properties) ? app.properties[0] : app.properties
         const isParty = app.tenant_id === user.id || property?.owner_id === user.id
-        // Périmètre légitime de cette candidature :
-        //  • les pièces déclarées dans docs_urls (identité, contrat, domicile)
-        //  • tout ce qui vit sous contracts/<applicationId>/ (bail, bail signé, attestation)
-        const docPaths = Object.values((app.docs_urls ?? {}) as Record<string, string>)
-        const belongsToApp = docPaths.includes(path) || path.startsWith(`contracts/${applicationId}/`)
+        // Le path doit appartenir à CETTE candidature. On NE fait PAS confiance à
+        // `docs_urls` (écrit par le locataire à la candidature → INJECTABLE : il y
+        // glisserait `${uid_victime}/id-card.jpg` pour exfiltrer la CNI d'autrui).
+        // Périmètre légitime dérivé de données NON forgeables :
+        //  • pièces du locataire de la candidature → préfixe `${app.tenant_id}/`
+        //    (à l'insert, RLS force tenant_id = auth.uid → non usurpable)
+        //  • contrat/bail → sous contracts/<applicationId>/
+        const belongsToApp =
+          path.startsWith(`${app.tenant_id}/`) || path.startsWith(`contracts/${applicationId}/`)
         if (isParty && belongsToApp) allowed = true
       }
     }
