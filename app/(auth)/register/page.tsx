@@ -58,6 +58,10 @@ export default function RegisterPage() {
         setLoading(false)
         return
       }
+
+      // Marque l'entrée waitlist comme "convertie" (compte réellement créé) → le
+      // crédit parrainage ne compte que les filleuls convertis (anti-farming). Non bloquant.
+      fetch('/api/waitlist/convert', { method: 'POST' }).catch(() => {})
     }
 
     router.push('/dashboard')

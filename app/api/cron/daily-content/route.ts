@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 4. Envoyer email de validation
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://instant-rent-six.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://instant-rent.fr'
     await sendDailyContentReviewEmail({
       email: ADMIN_EMAILS[0],
       contents: inserted,

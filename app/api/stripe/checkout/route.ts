@@ -73,10 +73,14 @@ export async function POST(req: NextRequest) {
       .eq('email', user.email.toLowerCase())
       .maybeSingle()
     if (wl?.referral_code) {
+      // .eq('converted', true) : ne compter QUE les filleuls qui ont réellement
+      // créé un compte (anti-farming de faux emails waitlist → crédit auto-attribué).
+      // Fail-safe : si la colonne n'existe pas encore, count = null → crédit 0.
       const { count: referralCount } = await supabaseAdmin
         .from('waitlist')
         .select('id', { count: 'exact', head: true })
         .eq('referred_by', wl.referral_code)
+        .eq('converted', true)
       const earnedCents = computeReferralCredit(referralCount ?? 0) * 100
       const { data: usedRows } = await supabaseAdmin
         .from('subscriptions')

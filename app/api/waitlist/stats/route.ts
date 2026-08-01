@@ -51,7 +51,9 @@ export async function GET(req: NextRequest) {
   const maxedOut = referralsToMax === 0
 
   return NextResponse.json({
-    full_name: me.full_name,
+    // Prénom seulement : endpoint public (code de parrainage) → on ne divulgue
+    // pas le nom complet du parrain à qui possède un code.
+    full_name: (me.full_name ?? '').split(' ')[0],
     role: me.role,
     referral_code: me.referral_code,
     position: positionCount ?? 0,
